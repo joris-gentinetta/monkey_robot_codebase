@@ -242,7 +242,7 @@ If you did everything right up until here, you should be able to drag around the
 1. From this repo, download the folder "monkey_interface" and place it in the "src" folder of your catkin ws
 2. Run ```catkin build monkey_interface``` to build the package.
 3. If you haven't done so already, run ```caktin build ``` in the src folder, to build all packages. This will take about 10min (if you never build them before).
-
+# Usage
 ## 14. Setup the monkey_interface 
 
 1. Open the directory *ws_moveit/src/monkey_interface* in a terminal and run ```chmod +x monkey_interface.py``` to allow monkey_interface.py to be executed. 
@@ -260,7 +260,7 @@ And also it is just annoying.
 
 To run the joint_control_listener.py script do the following:
 
-1. SSH into the RPP (```ssh pi@<RPP_IP```) in two different terminals
+1. SSH into the RPP (```ssh rm@<RPP_IP```) in two different terminals
 2. In the first terminal run ```roscore``` to start up the ROS network
 3. In the second terminal, navigate to *monkey_ws* and source it
 4. In the second terminal, run ```sudo pigpiod``` to start the PiGPIO daemon.
@@ -315,7 +315,7 @@ The following diagram describes the control flow of the monkey_interface.py scri
 ## 17. Use the joint_control node on the RPP
 To control the motors directly (as described in appendix D of the thesis) the following steps must be followed.
 
-1. SSH into the RPP (```ssh pi@<RPP_IP```) in two different terminals
+1. SSH into the RPP (```ssh rm@<RPP_IP```) in two different terminals
 2. In the first terminal run ```roscore``` to start up the ROS network
 3. In the second terminal, navigate to *monkey_ws* and source it
 4. In the second terminal, run ```sudo pigpiod``` to start the PiGPIO daemon.
