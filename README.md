@@ -80,17 +80,21 @@ For the RPP it  suffices to install *ros-noetic-ros-base* instead of *ros-noetic
 ## 6. Setup the ROS Environment Variables
 For the RPP with IP-Address <RPP_IP>, write these lines in the .bashrc file:
 ```
+source /opt/ros/noetic/setup.bash
 export ROS_IP=<RPP_IP>
 export ROS_MASTER_URI=http://<RPP_IP>:11311
 #e.g.:
+source /opt/ros/noetic/setup.bash
 export ROS_IP=10.42.0.2
 export ROS_MASTER_URI=http://10.42.0.2:11311
 ```
 For the desktop PC with IP-Address: <PC_IP>, write these lines in the .bashrc file:
 ```
+source /opt/ros/noetic/setup.bash
 export ROS_IP=<PC_IP>
 export ROS_MASTER_URI=http://<RPP_IP>:11311
 #e.g.:
+source /opt/ros/noetic/setup.bash
 export ROS_IP=10.42.0.1
 export ROS_MASTER_URI=http://10.42.0.2:11311
 ```
@@ -108,11 +112,12 @@ git clone https://github.com/ros-planning/panda_moveit_config.git -b noetic-deve
 ```
  If you run it "fatal error" will be displayed, but that is irrelevant for our purposes.
 
-## 8. Install package responsible for data saving/loading
+## 8. Install package responsible for data saving/loading on the RPP
 The package in question is called "Rospy message converter". You can install it with: 
 
 ```
 sudo apt install ros-noetic-rospy-message-converter
+sudo apt install python3-roslaunch
 ```
 Note that any other package which turns out to be missing should be installed analogously.
  
@@ -242,14 +247,16 @@ If you did everything right up until here, you should be able to drag around the
 1. From this repo, download the folder "monkey_interface" and place it in the "src" folder of your catkin ws
 2. Run ```catkin build monkey_interface``` to build the package.
 3. If you haven't done so already, run ```caktin build ``` in the src folder, to build all packages. This will take about 10min (if you never build them before).
+4. Open the directory *ws_moveit/src/monkey_interface* in a terminal and run ```chmod +x monkey_interface.py``` to allow monkey_interface.py to be executed.
+   
 # Usage
 ## 14. Setup the monkey_interface 
-
-1. Open the directory *ws_moveit/src/monkey_interface* in a terminal and run ```chmod +x monkey_interface.py``` to allow monkey_interface.py to be executed. 
-2. Open *ws_moveit* in two different terminals and source it in both.
-3. In the first terminal run ```roslaunch <name-of-your-moveit-config> demo.launch```. Rviz should open. 
-4. In the second terminal run ```rosrun monkey_interface monkey_interface.py```
-5. Arrange all windwos such that you have Rviz on the left side of your screen and the second terminal on the right side (having multiple screens helps).
+1. Start the ROS network by running ```roscore``` on the RPP
+2. Then on the controller device:
+3. Open *ws_moveit* in two different terminals and source it in both: ```source devel/setup.bash```.
+4. In the first terminal run ```roslaunch <name-of-your-moveit-config> demo.launch``` e.g.: ```roslaunch monkey demo.launch```. Rviz should open. 
+5. In the second terminal run ```rosrun monkey_interface monkey_interface.py```
+6. Arrange all windwos such that you have Rviz on the left side of your screen and the second terminal on the right side (having multiple screens helps).
 
 ## 15. Setup the RPP to listen to joint_states data
 It is important that you launch demo.launch and joint_control_listener.py in a certain order. Namely, you have to launch demo.launch (see 9.19) **before** you run joint_control_listener.py. The launch process of demo.launch includes the publishing of the joint_states as they are specified in the URDF. This corresponds to a pose of the robot where he stretches both arms horizontally and the head vertically. Even though the demo.launch launch process at some point loads the correct default poses (arms hanging, head looking forward), it seems impossible to get rid of this "jesus" like pose which he publishes at the very beginning of the launch process. 
@@ -260,11 +267,9 @@ And also it is just annoying.
 
 To run the joint_control_listener.py script do the following:
 
-1. SSH into the RPP (```ssh rm@<RPP_IP```) in two different terminals
-2. In the first terminal run ```roscore``` to start up the ROS network
-3. In the second terminal, navigate to *monkey_ws* and source it
-4. In the second terminal, run ```sudo pigpiod``` to start the PiGPIO daemon.
-5. In the second terminal, run ```rosrun monkey_listener joint_control_listener.py``` to start the listener node
+1. Navigate to *monkey_ws* and source it
+2. Run ```sudo pigpiod``` to start the PiGPIO daemon.
+3. Run ```rosrun monkey_listener joint_control_listener.py``` to start the listener node
 
 Note that the default position of the robot after the demo launch is determined by the planning group poses specified in the Setup Assistant. Namely, each planning group will be set to the first pose specified for it in the Setup Assistant. 
 
