@@ -40,12 +40,10 @@ Use the [Raspberry Pi Imager](https://www.raspberrypi.com/software/) to flash a 
 ## 3. Setup a static IP on the RPP
 1. SSH into the RPP
 2. To enable a connection over ethernet:
-On computer:
-- https://docs.phillycommunitywireless.org/en/latest/device-configs/shared-connection/
-On raspberry:
-- Enable ethernet interface: ```sudo ifconfig eth0 up```
+- (on computer) https://docs.phillycommunitywireless.org/en/latest/device-configs/shared-connection/
+- (on RPP) Enable ethernet interface: ```sudo ifconfig eth0 up```
 3. Navigate to /etc/netplan
-4. Create config.yaml and write the following:
+4. Create config.yaml and write the following (adapt the wlan0 settings to the connection you choose in the Rasperry Pi Imager):
 ```
 network:
     version: 2
@@ -65,8 +63,8 @@ network:
                     - 8.8.8.8
     ethernets:
         eth0:
-            addresses: [10.42.0.2/24]
-            gateway4: 10.42.0.1  
+            addresses: [10.42.0.2/24] #<RPP_IP>
+            gateway4: 10.42.0.1  #<PC_IP>
             nameservers:
                 addresses: [8.8.8.8,8.8.4.4]
 ```
@@ -77,18 +75,24 @@ Follow the steps described [here](https://wiki.ros.org/noetic/Installation/Ubunt
 ## 5. Install ROS on the RPP
 Follow the steps described [here](https://wiki.ros.org/noetic/Installation/Ubuntu) to install ROS on the RPP.
 
-For the RPP it probably suffices to install *ros-noetic-ros-base* instead of *ros-noetic-desktop-full*. The latter includes Rviz and Gazebo (simulations softwares) which are of no use on the headless RPP.
+For the RPP it  suffices to install *ros-noetic-ros-base* instead of *ros-noetic-desktop-full*. The latter includes Rviz and Gazebo (simulations softwares) which are of no use on the headless RPP.
 
 ## 6. Setup the ROS Environment Variables
-For the RPP with IP-Address <RPP_IP> execute these commands in a terminal on the RPP.
+For the RPP with IP-Address <RPP_IP>, write these lines in the .bashrc file:
 ```
-export ROS_IP = <RPP_IP>
-export ROS_MASTER_URI = http://<RPP_IP>:11311
+export ROS_IP=<RPP_IP>
+export ROS_MASTER_URI=http://<RPP_IP>:11311
+#e.g.:
+export ROS_IP=10.42.0.2
+export ROS_MASTER_URI=http://10.42.0.2:11311
 ```
-For the desktop PC with IP-Address: <PC_IP> execute these commands in a terminal on the PC.
+For the desktop PC with IP-Address: <PC_IP>, write these lines in the .bashrc file:
 ```
-export ROS_IP = <PC_IP>
-export ROS_MASTER_URI = http://<RPP_IP>:11311
+export ROS_IP=<PC_IP>
+export ROS_MASTER_URI=http://<RPP_IP>:11311
+#e.g.:
+export ROS_IP=10.42.0.1
+export ROS_MASTER_URI=http://10.42.0.2:11311
 ```
 
 Note that the ROS_MASTER_URI refers to the device which is the ROS master, i.e who starts and controls the ROS network. With these environment variables you must start the ROS network by running ```roscore``` on the RPP. If you dont do that the setup assistant and all other nodes you try to launch will fail because they are trying to find the ROS master but can't, since roscore wasn't run on the device whose IP was exported as ROS_MASTER_URI. 
