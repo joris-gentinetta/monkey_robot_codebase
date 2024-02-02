@@ -39,8 +39,13 @@ Use the [Raspberry Pi Imager](https://www.raspberrypi.com/software/) to flash a 
  
 ## 3. Setup a static IP on the RPP
 1. SSH into the RPP
-2. Navigate to */etc/netplan*
-3. Add a file with the following content to this directory:
+2. To enable a connection over ethernet:
+On computer:
+- https://docs.phillycommunitywireless.org/en/latest/device-configs/shared-connection/
+On raspberry:
+- Enable ethernet interface: ```sudo ifconfig eth0 up```
+3. Navigate to /etc/netplan
+4. Create config.yaml and write the following:
 ```
 network:
     version: 2
