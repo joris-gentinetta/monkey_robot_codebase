@@ -35,7 +35,7 @@ The appendix of the above mentioned thesis already contains most of the necessar
 You can get the image from [here](https://releases.ubuntu.com/20.04/).
 
 ## 2. Install Ubuntu 20.04 Server on the RPP
-Use the [Raspberry Pi Imager](https://www.raspberrypi.com/software/) to flash a Ubuntu 20.04 Server Distribution to the RPP. The image used during the thesis can be found [here](https://old-releases.ubuntu.com/releases/20.04/). The RPP Imager will offer you to include the SSID and password of a local network in the image to be flashed, which can be useful to already set at this stage.
+Use the [Raspberry Pi Imager](https://www.raspberrypi.com/software/) to flash a Ubuntu 20.04 Server Distribution to the RPP. Select "Other general-purpose OS/Ubuntu/Ubuntu Server 20.04.5 LTS (64 bit)" from the options. The RPP Imager will offer you to include the SSID and password of a local network in the image to be flashed, which can be useful to already set at this stage.
  
 ## 3. Setup a static IP on the RPP
 1. SSH into the RPP
@@ -48,16 +48,22 @@ network:
         renderer: networkd
         wlan0:
             access-points:
-                <WLAN-NAME>:
-                    password: <WLAN-PWD>
+                JorisPhone:
+                    password: genti111  
             dhcp4: no
             optional: true
             addresses:
-                - <DESIRED-IP>/24 # desired IP
-            gateway4: <ROUTER-IP > # can be obtained with $ip r
+                - 172.20.10.3/28              
+            gateway4: 172.20.10.1                              
             nameservers:
                 addresses:
                     - 8.8.8.8
+    ethernets:
+        eth0:
+            addresses: [10.42.0.2/24]
+            gateway4: 10.42.0.1  
+            nameservers:
+                addresses: [8.8.8.8,8.8.4.4]
 ```
 
 ## 4. Install ROS on the controller device
