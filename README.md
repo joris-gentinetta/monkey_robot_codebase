@@ -248,7 +248,25 @@ If you did everything right up until here, you should be able to drag around the
 2. Run ```catkin build monkey_interface``` to build the package.
 3. If you haven't done so already, run ```caktin build ``` in the src folder, to build all packages. This will take about 10min (if you never build them before).
 4. Open the directory *ws_moveit/src/monkey_interface* in a terminal and run ```chmod +x monkey_interface.py``` to allow monkey_interface.py to be executed.
-   
+
+
+## 14. Install MoveIt on the RPP
+Follow the instructions [here](https://ros-planning.github.io/moveit_tutorials/doc/getting_started/getting_started.html) to install MoveIt on the controller device. From this point onwards I am assuming you have a catkin workspace setup, to which I will refer as "monkey_ws" from now on. Note that this simply means that there is a folder in your /home directory called *monkey_ws*, in which you have executed all commands listed in the tutorial mentioned above. 
+/One command which you don't have to run is the last one of these three.
+/```
+/cd ~/monkey_ws/src
+/git clone https://github.com/ros-planning/moveit_tutorials.git -b master
+/git clone https://github.com/ros-planning/panda_moveit_config.git -b noetic-devel #unnecessary
+/```
+/ If you run it "fatal error" will be displayed, but that is irrelevant for our purposes.
+
+## 15. Download and build the monkey_interface on the RPP
+1. From this repo, download the folder "monkey_listener" and place it in the "src" folder of your catkin ws
+2. Run ```catkin build monkey_listener``` to build the package.
+3. If you haven't done so already, run ```caktin build ``` in the src folder, to build all packages. This will take about 10min (if you never build them before).
+4. Open the directory *monkey_ws/src/monkey_listener* in a terminal and run ```chmod +x joint_control_listener.py``` to allow monkey_interface.py to be executed.
+
+ 
 # Usage
 ## 14. Setup the monkey_interface 
 1. Start the ROS network by running ```roscore``` on the RPP
