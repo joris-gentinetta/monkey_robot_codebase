@@ -37,10 +37,12 @@ Last changed: 13.6.23
 # Imports ==================================================================================================
 import rospy
 import sys
-from gpiozero import Servo, LED
-from gpiozero.pins.pigpio import PiGPIOFactory
+# from gpiozero import Servo, LED
+# from gpiozero.pins.pigpio import PiGPIOFactory
 from numpy import interp
-factory = PiGPIOFactory() #joris approach
+# factory = PiGPIOFactory() #joris approach
+from adafuit_servokit import ServoKit
+kit = ServoKit(channels=16, frequency=333)
 # Imports done =============================================================================================
 
 
@@ -56,15 +58,18 @@ class joint:
         self.name = _name
         self.motor_pin = _motor_pin
 
-        # Map min,middle,max,default value from full duty cycle range [4.5,10.5] to [-1,1] (necessary for PiGPIOFactory())
-        self.min_val = interp(_min_dc,[4.5,10.5],[-1,1])
-        self.middle_val = interp(_middle_dc,[4.5,10.5],[-1,1])
-        self.max_val = interp(_max_dc,[4.5,10.5],[-1,1])
-        self.default_val = interp(_default_dc,[4.5,10.5],[-1,1])
+        # Map min,middle,max,default value from full duty cycle range [4.5,10.5] to [0, 180] (necessary for ServoKit)
+        self.min_val = interp(_min_dc,[4.5,10.5],[0,180])
+        self.middle_val = interp(_middle_dc,[4.5,10.5],[0,180])
+        self.max_val = interp(_max_dc,[4.5,10.5],[0,180])
+        self.default_val = interp(_default_dc,[4.5,10.5],[0,180])
         
         # Init motor (by using the factory pattern from the gpiozero lib we can significantly reduce the jitter)
-        self.servo = Servo(self.motor_pin, initial_value=self.default_val, min_pulse_width=0.0005, max_pulse_width=0.0025, pin_factory=factory) 
-    
+        # self.servo = Servo(self.motor_pin, initial_value=self.default_val, min_pulse_width=0.0005, max_pulse_width=0.0025, pin_factory=factory)
+        self.servo = kit.servo[self.motor_pin]
+        self.servo.set_pulse_width_range(900,2200)
+        self.servo.angle = self.default_val
+
     # Set joint servo to one of 4 pre defined states {0,0.5,1,def}
     def setState(self,_target_state):
         # Value to be written to servo
@@ -85,7 +90,7 @@ class joint:
         next_val_disp = '%.3f'% next_val
         rospy.loginfo("Setting %s to [itp %s]",self.name,next_val_disp)
         # Write value to motor
-        self.servo.value = next_val
+        self.servo.angle = next_val
     
     # Sweep through predefined states
     def sweep(self):
@@ -110,28 +115,26 @@ class Body:
         #init joints [name,pin,default,min,middle,max]
 
         #left arm
-
-        LW_joint = joint("LW",3) #board 5
-        
-        LSH_joint = joint("LSH",4,4,4,6,7) #board 7
-        LEB_joint = joint("LEB",17,10.5,10.5,8,6.75) #board 11
-        LSL_joint = joint("LSL",27,10.5,10.5,7.5,4.5,) #board 13
-        #LH_joint = joint("LH",22,0,0,0,0) #board 15
-        LSF_joint = joint("LSF",10,6.25,6.25,7.5,10.5,) #board 19
+        arm = 0 # 0 for left, 6 for right
+        # LH_joint = joint("LH",arm+0,0,0,0,0) #board 15
+        LW_joint = joint("LW",arm+1) #board 5
+        LEB_joint = joint("LEB", arm+2, 10.5, 10.5, 8, 6.75)  # board 11
+        LSH_joint = joint("LSH",arm+3,4,4,6,7) #board 7
+        LSL_joint = joint("LSL",arm+4,10.5,10.5,7.5,4.5,) #board 13
+        LSF_joint = joint("LSF",arm+5,6.25,6.25,7.5,10.5,) #board 19
 
         #right arm
-        RW_joint = joint("RW",11) #board 23
-        RSH_joint = joint("RSH",5,4.5,4.5,7,8) #board 29
-        REB_joint = joint("REB",6,10,10,8,7) #board 31
-        RSL_joint = joint("RSL",13,10,10,8,5.75) #board 33
-        #RH_joint = joint("RH",2) #board 3
-        
-        RSF_joint = joint("RSF",26,6,6,7.5,10.5) #board 37
-        
+        arm = 6 # 0 for left, 6 for right
+        # RH_joint = joint("RH",arm+0) #board 3
+        RW_joint = joint("RW",arm+1) #board 23
+        REB_joint = joint("REB", arm+2, 10, 10, 8, 7)  # board 31
+        RSH_joint = joint("RSH", arm+3,4.5,4.5,7,8) #board 29
+        RSL_joint = joint("RSL", arm+4,10,10,8,5.75) #board 33
+        RSF_joint = joint("RSF", arm+5,6,6,7.5,10.5) #board 37
 
         #head
-        NH_joint = joint("NH",9,8,6.25,8,10.5) #board 21
-        NF_joint = joint("NF",19,10.5,10.5,7.5,4.5) #board 35
+        NH_joint = joint("NH",12,8,6.25,8,10.5) #board 21
+        NF_joint = joint("NF",13,10.5,10.5,7.5,4.5) #board 35
 
         # put joints in dict
         #left arm
