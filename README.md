@@ -112,15 +112,26 @@ git clone https://github.com/ros-planning/panda_moveit_config.git -b noetic-deve
 ```
  If you run it "fatal error" will be displayed, but that is irrelevant for our purposes.
 
-## 8. Install package responsible for data saving/loading on the RPP
+## 8.1 Install package responsible for data saving/loading on the controller device
 The package in question is called "Rospy message converter". You can install it with: 
 
 ```
 sudo apt install ros-noetic-rospy-message-converter
-sudo apt install python3-roslaunch
 ```
 Note that any other package which turns out to be missing should be installed analogously.
- 
+
+## 8.2 Install packages on the RPP
+```
+sudo apt install python3-roslaunch
+```
+For the servo hat:
+```
+sudo apt install python3-smbus
+sudo apt-get install i2c-tools
+sudo apt install python3-pip
+sudo pip install adafruit-circuitpython-servokit
+```
+
 ## 9. Generate a Moveit Config Package
 These instructions assume you have setup a catkin workspace.
 
@@ -251,14 +262,14 @@ If you did everything right up until here, you should be able to drag around the
 
 
 ## 14. Install MoveIt on the RPP
-Follow the instructions [here](https://ros-planning.github.io/moveit_tutorials/doc/getting_started/getting_started.html) to install MoveIt on the controller device. From this point onwards I am assuming you have a catkin workspace setup, to which I will refer as "monkey_ws" from now on. Note that this simply means that there is a folder in your /home directory called *monkey_ws*, in which you have executed all commands listed in the tutorial mentioned above. 
+Follow the instructions [here](https://ros-planning.github.io/moveit_tutorials/doc/getting_started/getting_started.html) to install MoveIt on the controller device. From this point onwards I am assuming you have a catkin workspace setup, to which I will refer as "ws_moveit" from now on. Note that this simply means that there is a folder in your /home directory called *ws_moveit*, in which you have executed all commands listed in the tutorial mentioned above. 
 
 
 ## 15. Download and build the monkey_interface on the RPP
 1. From this repo, download the folder "monkey_listener" and place it in the "src" folder of your catkin ws
 2. Run ```catkin build monkey_listener``` to build the package.
 3. If you haven't done so already, run ```caktin build ``` in the src folder, to build all packages. This will take about 10min (if you never build them before).
-4. Open the directory *monkey_ws/src/monkey_listener* in a terminal and run ```chmod +x joint_control_listener.py``` to allow monkey_interface.py to be executed.
+4. Open the directory *ws_moveit/src/monkey_listener* in a terminal and run ```chmod +x joint_control_listener.py``` to allow monkey_interface.py to be executed.
 
  
 # Usage
