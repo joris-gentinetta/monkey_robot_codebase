@@ -130,6 +130,7 @@ sudo apt install python3-smbus
 sudo apt-get install i2c-tools
 sudo apt install python3-pip
 sudo pip install adafruit-circuitpython-servokit
+pip install RPi.GPIO
 ```
 
 ## 9. Generate a Moveit Config Package
