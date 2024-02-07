@@ -41,7 +41,7 @@ import sys
 # from gpiozero.pins.pigpio import PiGPIOFactory
 from numpy import interp
 # factory = PiGPIOFactory() #joris approach
-from adafuit_servokit import ServoKit
+from adafruit_servokit import ServoKit
 kit = ServoKit(channels=16, frequency=333)
 # Imports done =============================================================================================
 
@@ -117,60 +117,30 @@ class Body:
         #left arm
         arm = 0 # 0 for left, 6 for right
         # LH_joint = joint("LH",arm+0,0,0,0,0) #board 15
-        LW_joint = joint("LW",arm+1) #board 5
-        LEB_joint = joint("LEB", arm+2, 10.5, 10.5, 8, 6.75)  # board 11
-        LSH_joint = joint("LSH",arm+3,4,4,6,7) #board 7
-        LSL_joint = joint("LSL",arm+4,10.5,10.5,7.5,4.5,) #board 13
-        LSF_joint = joint("LSF",arm+5,6.25,6.25,7.5,10.5,) #board 19
+        self.joints['LW'] = joint("LW",arm+1) #board 5
+        self.joints['LEB'] = joint("LEB", arm+2, 10.5, 10.5, 8, 6.75)  # board 11
+        self.joints['LSH'] = joint("LSH",arm+3,4,4,6,7) #board 7
+        self.joints['LSL'] = joint("LSL",arm+4,10.5,10.5,7.5,4.5,) #board 13
+        self.joints['LSF'] = joint("LSF",arm+5,6.25,6.25,7.5,10.5,) #board 19
 
         #right arm
         arm = 6 # 0 for left, 6 for right
         # RH_joint = joint("RH",arm+0) #board 3
-        RW_joint = joint("RW",arm+1) #board 23
-        REB_joint = joint("REB", arm+2, 10, 10, 8, 7)  # board 31
-        RSH_joint = joint("RSH", arm+3,4.5,4.5,7,8) #board 29
-        RSL_joint = joint("RSL", arm+4,10,10,8,5.75) #board 33
-        RSF_joint = joint("RSF", arm+5,6,6,7.5,10.5) #board 37
+        self.joints['RW'] = joint("RW",arm+1) #board 23
+        self.joints['REB'] = joint("REB", arm+2, 10, 10, 8, 7)  # board 31
+        self.joints['RSH'] = joint("RSH", arm+3,4.5,4.5,7,8) #board 29
+        self.joints['RSL'] = joint("RSL", arm+4,10,10,8,5.75) #board 33
+        self.joints['RSF'] = joint("RSF", arm+5,6,6,7.5,10.5) #board 37
 
         #head
-        NH_joint = joint("NH",12,8,6.25,8,10.5) #board 21
-        NF_joint = joint("NF",13,10.5,10.5,7.5,4.5) #board 35
+        self.joints['NH'] = joint("NH",12,8,6.25,8,10.5) #board 21 #up down
+        self.joints['NF'] = joint("NF",13,10.5,10.5,7.5,4.5) #board 35 #right left
 
-        # put joints in dict
-        #left arm
-
-        self.joints["LW"] = LW_joint
-        
-        self.joints["LSH"] = LSH_joint
-        self.joints["LEB"] = LEB_joint
-        self.joints["LSL"] = LSL_joint
-        #self.joints["LH"] = LH_joint
-        self.joints["LSF"] = LSF_joint
-        
-        #right arm
-        self.joints["RW"] = RW_joint
-        self.joints["RSH"] = RSH_joint
-        self.joints["REB"] = REB_joint
-        self.joints["RSL"] = RSL_joint
-        #self.joints["RH"] = RH_joint
-        
-        self.joints["RSF"] = RSF_joint
-        
-        #head
-        self.joints["NH"] = NH_joint
-        self.joints["NF"] = NF_joint
-    
-        
     def allToDef(self):
         # set all servos to default position
         for k, j in self.joints.items():
             j.setState("def")
         rospy.sleep(1.0)
-
-
-
-
-
 
 
 if __name__ == '__main__':
