@@ -268,9 +268,10 @@ Follow the instructions [here](https://ros-planning.github.io/moveit_tutorials/d
 
 ## 15. Download and build the monkey_interface on the RPP
 1. From this repo, download the folder "monkey_listener" and place it in the "src" folder of your catkin ws
-2. Run ```catkin build monkey_listener``` to build the package.
-3. If you haven't done so already, run ```caktin build ``` in the src folder, to build all packages. This will take about 10min (if you never build them before).
-4. Open the directory *ws_moveit/src/monkey_listener* in a terminal and run ```chmod +x joint_control_listener.py``` to allow monkey_interface.py to be executed.
+2. Run ```catkin build monkey_complete``` to build the package.
+3. Run ```catkin build monkey_listener``` to build the package.
+4. If you haven't done so already, run ```caktin build ``` in the src folder, to build all packages. This will take about 10min (if you never build them before).
+5. Open the directory *ws_moveit/src/monkey_listener* in a terminal and run ```chmod +x joint_control_listener.py``` and ```chmod +x joint_control.py``` to allow them to be executed.
 
  
 # Usage
@@ -346,9 +347,9 @@ To control the motors directly (as described in appendix D of the thesis) the fo
 
 1. SSH into the RPP (```ssh rm@<RPP_IP```) in two different terminals
 2. In the first terminal run ```roscore``` to start up the ROS network
-3. In the second terminal, navigate to *monkey_ws* and source it
-4. In the second terminal, run ```sudo pigpiod``` to start the PiGPIO daemon.
-5. In the second terminal, run ```rosrun monkey_listener joint_control.py``` to start the joint_control node
+3. In the second terminal, navigate to *monkey_ws* and source it: ```source devel/setup.bash```.
+////4. In the second terminal, run ```sudo pigpiod``` to start the PiGPIO daemon.
+5. In the second terminal, run ```rosrun monkey_listener joint_control.py alldef``` to start the joint_control node and set all joints to their default value
 
 
 ## 18. Useful tricks
