@@ -137,17 +137,6 @@ pip install RPi.GPIO
 These instructions assume you have setup a catkin workspace.
 
 1. Download the folder "monkey_complete" from this repository. Place it in *ws_moveit/src*.
-2. Download the URDF file "monkey_robot.urdf" from this repository. If you use a different URDF, make sure that the URDF contains the following lines below ```<robot name="NAME_OF_ROBOT">```:
-```xml
-    <link name="world" />
-    <joint name="world_to_base_link=" type="fixed">
-    	<parent link="world"/>
-        <child link="base_link"/>
-    </joint>
-  ```
-From now and I will refer to the URDF file as *monkey_robot.urdf*.
-
-3. Replace the  URDF file *monkey_complete/urdf/monkey_complete.urdf* with monkey_robot.urdf
 4. In *ws_moveit*, open a terminal and run ```catkin build monkey_complete``` to build the monkey_complete package.
 5. Source the workspace by running ```source devel/setup.bash``` in *ws_moveit*.
 6. Launch the moveit setup assistant with ``` roslaunch moveit_setup_assistant setup_assistant.launch```. Note that this will only work if:
