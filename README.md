@@ -99,7 +99,11 @@ export ROS_IP=10.42.0.1
 export ROS_MASTER_URI=http://10.42.0.2:11311
 ```
 
-Note that the ROS_MASTER_URI refers to the device which is the ROS master, i.e who starts and controls the ROS network. With these environment variables you must start the ROS network by running ```roscore``` on the RPP. If you dont do that the setup assistant and all other nodes you try to launch will fail because they are trying to find the ROS master but can't, since roscore wasn't run on the device whose IP was exported as ROS_MASTER_URI. 
+Note that the ROS_MASTER_URI refers to the device which is the ROS master, i.e who starts and controls the ROS network. With these environment variables you must start the ROS network by running 
+```
+roscore
+``` 
+on the RPP. If you dont do that the setup assistant and all other nodes you try to launch will fail because they are trying to find the ROS master but can't, since roscore wasn't run on the device whose IP was exported as ROS_MASTER_URI. 
 
 If you just want to use Rviz and not control the physical robot, just use the PC_IP in the ROS_MASTER_URI. Then the network will be started by your PC.
 
@@ -135,11 +139,11 @@ pip install RPi.GPIO
 
 ## 9. Generate a Moveit Config Package
 These instructions assume you have setup a catkin workspace.
-
 1. Download the folder "monkey_complete" from this repository. Place it in *ws_moveit/src*.
 4. In *ws_moveit*, open a terminal and run ```catkin build monkey_complete``` to build the monkey_complete package.
 5. Source the workspace by running ```source devel/setup.bash``` in *ws_moveit*.
 6. Launch the moveit setup assistant with ``` roslaunch moveit_setup_assistant setup_assistant.launch```. Note that this will only work if:
+- ```roscore``` is running on the RPP
 - you have installed and setup moveit according to this [tutorial](https://ros-planning.github.io/moveit_tutorials/doc/getting_started/getting_started.html)
 - you have sourced your workspace with ```source devel/setup.bash```
 7. In the setup assistant, select "Create New Moveit Configuration Package"
@@ -178,17 +182,18 @@ With this knowledge you can create the planning groups according to the followin
 ![eef_in_sa](https://github.com/multiplexcuriosus/monkey_robot_codebase/assets/50492539/67d41e35-fa33-42ad-b33a-849618700e0c)
 
 15. In **Author Information**, type in a name and a valid email, otherwise we can't save the config 
-16. In **Configuration Files**, specify the name of the package and place it in the source folder of your catkin workspace, e.g ```/home/<user>/ws_moveit/src/<name-of-your-moveit-config>```
+16. In **Configuration Files**, specify the name of the package and place it in the source folder of your catkin workspace, e.g ```/home/<user>/ws_moveit/src/monkey```
 17. Click "Generate Package" 
 18. Now we need to build the moveit config package. To do that, open your catkin ws in a terminal and run:
  ```
  source devel/setup.bash
- catkin build <name-of-your-moveit-config>
+ catkin build monkey
  ``` 
 19. In order to test the freshly generated config package, run (in the same terminal as before):
 
 ```
-roslaunch <name-of-your-moveit-config> demo.launch
+ source devel/setup.bash
+ roslaunch monkey demo.launch
 ``` 
 
 Now you should see a window popping up containing the simulation environment Rviz. It should look like this:
@@ -248,19 +253,18 @@ If you did everything right up until here, you should be able to drag around the
 1. From this repo, download the folder "monkey_interface" and place it in the "src" folder of your catkin ws
 2. Run ```catkin build monkey_interface``` to build the package.
 3. If you haven't done so already, run ```caktin build ``` in the src folder, to build all packages. This will take about 10min (if you never build them before).
-4. Open the directory *ws_moveit/src/monkey_interface* in a terminal and run ```chmod +x monkey_interface.py``` to allow monkey_interface.py to be executed.
+4. Run ```chmod +x ~/ws_moveit/src/monkey_interface/src/monkey_interface.py``` to allow monkey_interface.py to be executed.
 
 
 ## 14. Install MoveIt on the RPP
 Follow the instructions [here](https://ros-planning.github.io/moveit_tutorials/doc/getting_started/getting_started.html) to install MoveIt on the controller device. From this point onwards I am assuming you have a catkin workspace setup, to which I will refer as "ws_moveit" from now on. Note that this simply means that there is a folder in your /home directory called *ws_moveit*, in which you have executed all commands listed in the tutorial mentioned above. 
 
 
-## 15. Download and build the monkey_interface on the RPP
+## 15. Download and build the monkey_listener on the RPP
 1. From this repo, download the folder "monkey_listener" and place it in the "src" folder of your catkin ws
-2. Run ```catkin build monkey_complete``` to build the package.
-3. Run ```catkin build monkey_listener``` to build the package.
-4. If you haven't done so already, run ```caktin build ``` in the src folder, to build all packages. This will take about 10min (if you never build them before).
-5. Open the directory *ws_moveit/src/monkey_listener* in a terminal and run ```chmod +x joint_control_listener.py``` and ```chmod +x joint_control.py``` to allow them to be executed.
+2. Run ```catkin build monkey_listener``` to build the package.
+3. If you haven't done so already, run ```caktin build ``` in the src folder, to build all packages. This will take about 10min (if you never build them before).
+4. Open the directory *ws_moveit/src/monkey_listener* in a terminal and run ```chmod +x joint_control_listener.py``` and ```chmod +x joint_control.py``` to allow them to be executed.
 
  
 # Usage
@@ -273,7 +277,7 @@ Follow the instructions [here](https://ros-planning.github.io/moveit_tutorials/d
 6. Arrange all windwos such that you have Rviz on the left side of your screen and the second terminal on the right side (having multiple screens helps).
 
 ## 15. Setup the RPP to listen to joint_states data
-It is important that you launch demo.launch and joint_control_listener.py in a certain order. Namely, you have to launch demo.launch (see 9.19) **before** you run joint_control_listener.py. The launch process of demo.launch includes the publishing of the joint_states as they are specified in the URDF. This corresponds to a pose of the robot where he stretches both arms horizontally and the head vertically. Even though the demo.launch launch process at some point loads the correct default poses (arms hanging, head looking forward), it seems impossible to get rid of this "jesus" like pose which he publishes at the very beginning of the launch process. 
+It is important that you launch demo.launch and joint_control_listener.py in a certain order. Namely, you have to launch demo.launch (see 14.4) **before** you run joint_control_listener.py. The launch process of demo.launch includes the publishing of the joint_states as they are specified in the URDF. This corresponds to a pose of the robot where he stretches both arms horizontally and the head vertically. Even though the demo.launch launch process at some point loads the correct default poses (arms hanging, head looking forward), it seems impossible to get rid of this "jesus" like pose which he publishes at the very beginning of the launch process. 
 
 Another reason why it is important to use the order proposed above, is that the mentioned jesus pose is executed extremly fast on the robot, potentially altering the thread tension and/or turnbuckles configuration. 
 
