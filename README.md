@@ -292,9 +292,8 @@ And also it is just annoying.
 
 To run the joint_control_listener.py script do the following:
 
-1. Navigate to *monkey_ws* and source it
-2. Run ```sudo pigpiod``` to start the PiGPIO daemon.
-3. Run ```rosrun monkey_listener joint_control_listener.py``` to start the listener node
+1. Navigate to *ws_moveit* and source it
+2. Run ```rosrun monkey_listener joint_control_listener.py``` to start the listener node
 
 Note that the default position of the robot after the demo launch is determined by the planning group poses specified in the Setup Assistant. Namely, each planning group will be set to the first pose specified for it in the Setup Assistant. 
 
