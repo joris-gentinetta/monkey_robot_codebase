@@ -144,11 +144,11 @@ class Body:
         # Init joints [name,pin,default,min,middle,max]
 
         # Left arm
-        self.joints["LH"] = Joint("LH",3)
+        self.joints["LH"] = Joint("LH",3, invert=True)
         self.joints["LW"] = Joint("LW", 2)
-        self.joints["LEB"] = Joint("LEB", 1)
+        self.joints["LEB"] = Joint("LEB", 1, invert=True)
         self.joints["LSH"] = Joint("LSH", 4)
-        self.joints["LSL"] = Joint("LSL", 0)
+        self.joints["LSL"] = Joint("LSL", 0, invert=True)
         self.joints["LSF"] = Joint("LSF", 5)
 
         # Right arm
