@@ -364,7 +364,7 @@ class Utils:
 
     def collect_wpoints_in_gui_genti(self, initial_wp_count):
         wcounter = initial_wp_count  # For the shell interaction a waypoint counter is needed. An initial_count != 0 means that we will append new poses to a poseArray loaded form a json file
-        wp_collecting_intent_status = " "
+        wp_collecting_intent_status = ""
         wp_ns = "collected_waypoint"
         col_poses = PoseArray()  # Create empty poseArray
         # If initial_wp_count is greater 1 this means we are not populating an empty poseArray, but instead appending new poses to an existing poseArray
@@ -630,8 +630,6 @@ def main():
 
         elif mode == 5: # Exit
             pass
-
-        elif mode == 6:
 
 
         else:
