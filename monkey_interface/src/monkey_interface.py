@@ -391,7 +391,7 @@ class Utils:
                 if wpoint_valid:
                     eef_step_size = 1.0  # 1m -> no interpolation, cartesian path will have as many points as pose vector in iface
                     # Plan a path
-                    (plan, suc_frac) = self.iface.move_group.compute_cartesian_path(col_poses + [w], float(eef_step_size),
+                    (plan, suc_frac) = self.iface.move_group.compute_cartesian_path(col_poses.poses + [w], float(eef_step_size),
                                                                                  0.0)  # last argument: jump_threshold -> not used
                     if suc_frac == 1.0:
                         break
