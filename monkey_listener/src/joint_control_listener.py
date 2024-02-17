@@ -48,16 +48,16 @@ kit = ServoKit(channels=16, frequency=333)
 # Class to store the duty cycles of the predefined states and who performs the mapping from duty cycle to [-1,1]
 class Joint:
 
-    def __init__(self, _name, _motor_pin, _default_dc=7.5, _min_dc=4.5, _middle_dc=7.5, _max_dc=10.5) -> None:
+    def __init__(self, _name, _motor_pin, _default_dc=7.5, _min_dc=4.5, _middle_dc=7.5, _max_dc=10.5, invert=False) -> None:
         # Init name, motor pin
         self.name = _name
         self.motor_pin = _motor_pin
 
         # Map min,middle,max,default value from full duty cycle range [4.5,10.5] to [-1,1] (necessary for PiGPIOFactory())
-        self.min_val = interp(_min_dc, [4.5, 10.5], [40, 140])
-        self.middle_val = interp(_middle_dc, [4.5, 10.5], [40, 140])
-        self.max_val = interp(_max_dc, [4.5, 10.5], [40, 140])
-        self.default_val = interp(_default_dc, [4.5, 10.5], [40, 140])
+        self.min_val = interp(_min_dc, [4.5, 10.5], [10, 170])
+        self.middle_val = interp(_middle_dc, [4.5, 10.5], [10, 170])
+        self.max_val = interp(_max_dc, [4.5, 10.5], [10, 170])
+        self.default_val = interp(_default_dc, [4.5, 10.5], [10, 170])
 
         # Init motor (by using the factory pattern from the gpiozero lib we can significantly reduce the jitter)
         self.servo = kit.servo[self.motor_pin]
@@ -67,7 +67,7 @@ class Joint:
         # Init model angle (per default set all to [-pi/half,pi/half])
         self.angMin = -1.571
         self.angMax = 1.571
-        self.mapType = 0
+        self.invert = invert
 
     # Set joint servo to one of 4 pre defined states {0,0.5,1,def}
     def setState(self, _target_state):
@@ -93,14 +93,17 @@ class Joint:
     # The input target_val is mapped to [-1,1], where the mapping also depends on the attachment of the threads to the servo.
     def set_to_itp_val(self, target_val):
         # Calculate the actual value to be written to the servo depending on which mapping type the servo has
-        if self.mapType == 0:  # No attachment inversion
-            intp_val = interp(target_val, [self.angMin, self.angMax], [self.min_val, self.max_val])
-        elif self.mapType == 1:  # Attachment inversion
+        if self.invert:
+            # Attachment inversion
             mi = min(self.min_val, self.max_val)
             ma = max(self.min_val, self.max_val)
             intp_val = interp(target_val, [self.angMin, self.angMax], [mi, ma])
         else:
-            rospy.loginfo("Unknown mapType")
+            # No attachment inversion
+            intp_val = interp(target_val, [self.angMin, self.angMax], [self.min_val, self.max_val])
+
+
+
 
         # Write interpolated value to servo
         self.servo.value = float(intp_val)
@@ -139,68 +142,50 @@ class Body:
         # Init joints [name,pin,default,min,middle,max]
 
         # Left arm
-        # LH_joint = Joint("LH",3,0,0,0,0)
-        LW_joint = Joint("LW", 2)
-        LEB_joint = Joint("LEB", 1, 10.5, 10.5, 8, 6.75)
-        LSH_joint = Joint("LSH", 4, 4, 4, 6, 7)
-        LSL_joint = Joint("LSL", 0, 10.5, 10.5, 7.5, 4.5, )
-        LSF_joint = Joint("LSF", 5, 6.25, 6.25, 7.5, 10.5, )
+        self.joints["LH"] = Joint("LH",3)
+        self.joints["LW"] = Joint("LW", 2)
+        self.joints["LEB"] = Joint("LEB", 1)
+        self.joints["LSH"] = Joint("LSH", 4)
+        self.joints["LSL"] = Joint("LSL", 0)
+        self.joints["LSF"] = Joint("LSF", 5)
 
         # Right arm
-        # RH_joint = Joint("RH",9)
-        RW_joint = Joint("RW", 8)
-        REB_joint = Joint("REB", 7, 10, 10, 8, 7)
-        RSH_joint = Joint("RSH", 10, 4.5, 4.5, 7, 8)
-        RSL_joint = Joint("RSL", 6, 10, 10, 8, 5.75)
-        RSF_joint = Joint("RSF", 11, 6, 6, 7.5, 10.5)
+        self.joints["RH"] = Joint("RH",9)
+        self.joints["RW"] = Joint("RW", 8)
+        self.joints["REB"] = Joint("REB", 7)
+        self.joints["RSH"] = Joint("RSH", 10)
+        self.joints["RSL"] = Joint("RSL", 6)
+        self.joints["RSF"] = Joint("RSF", 11)
 
         # Head
-        NF_joint = Joint("NF", 12, 9.75, 9.75, 7.5, 4.5)
-        NH_joint = Joint("NH", 13, 8.125, 6.25, 8.125, 10)
+        self.joints["NH"] = Joint("NF", 12)
+        self.joints["NF"] = Joint("NH", 13)
 
 
-        # Put joints in dict
 
-        # Left arm
-        self.joints["LW"] = LW_joint
-        self.joints["LSH"] = LSH_joint
-        self.joints["LEB"] = LEB_joint
-        self.joints["LSL"] = LSL_joint
-        # self.joints["LH"] = LH_joint
-        self.joints["LSF"] = LSF_joint
-        # Right arm
-        self.joints["RW"] = RW_joint
-        self.joints["RSH"] = RSH_joint
-        self.joints["REB"] = REB_joint
-        self.joints["RSL"] = RSL_joint
-        # self.joints["RH"] = RH_joint
-        self.joints["RSF"] = RSF_joint
-        # Head
-        self.joints["NH"] = NH_joint
-        self.joints["NF"] = NF_joint
 
-        # Set special angles and mapTypes
-
-        self.joints["LEB"].angMin = 0
-        self.joints["LEB"].angMax = 1.571
-
-        self.joints["LSH"].angMin = -1.571
-        self.joints["LSH"].angMax = -0.4955
-
-        self.joints["RSF"].angMin = -1.571
-        self.joints["RSF"].angMax = 1.176
-
-        self.joints["RSL"].angMin = -1.123
-        self.joints["RSL"].angMax = 1.571
-        self.joints["RSL"].mapType = 1
-
-        self.joints["RSH"].angMin = 0
-        self.joints["RSH"].angMax = 1.571
-        self.joints["RSH"].mapType = 2
-
-        self.joints["REB"].angMin = -1.571
-        self.joints["REB"].angMax = 0
-        self.joints["REB"].mapType = 1
+        # # Set special angles and mapTypes
+        #
+        # self.joints["LEB"].angMin = 0
+        # self.joints["LEB"].angMax = 1.571
+        #
+        # self.joints["LSH"].angMin = -1.571
+        # self.joints["LSH"].angMax = -0.4955
+        #
+        # self.joints["RSF"].angMin = -1.571
+        # self.joints["RSF"].angMax = 1.176
+        #
+        # self.joints["RSL"].angMin = -1.123
+        # self.joints["RSL"].angMax = 1.571
+        # self.joints["RSL"].mapType = 1
+        #
+        # self.joints["RSH"].angMin = 0
+        # self.joints["RSH"].angMax = 1.571
+        # self.joints["RSH"].mapType = 2
+        #
+        # self.joints["REB"].angMin = -1.571
+        # self.joints["REB"].angMax = 0
+        # self.joints["REB"].mapType = 1
 
     # Set all servos to default position
     def allToDef(self):

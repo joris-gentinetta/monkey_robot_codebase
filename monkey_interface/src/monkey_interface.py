@@ -547,7 +547,6 @@ def main():
         mode = helper.queryValidMode()
 
         if mode == 1: # Plan display execute hard coded pose goal
-
             # Plan and display trajectory to hard coded pose goal, query user for execution
             helper.pdExamplePoseGoal() 
         elif mode == 2: # Plan display hard coded trajectory, query for execution
