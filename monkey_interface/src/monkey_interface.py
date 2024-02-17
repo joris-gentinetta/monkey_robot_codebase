@@ -413,8 +413,8 @@ class Utils:
         self.iface.createMarker(def_pose,"hard_coded_waypoint")
         # Create target pose
         pose_goal = copy.deepcopy(def_pose)
-        pose_goal.position.z += 0.05
-        pose_goal.position.y += 0.07
+        # pose_goal.position.z += 0.05
+        # pose_goal.position.y += 0.07
         # Create marker for target pose
         self.iface.createMarker(pose_goal,"hard_coded_waypoint")
         # Publish marker array containing def and target pose
