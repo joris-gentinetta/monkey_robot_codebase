@@ -121,7 +121,7 @@ class MoveGroupInterface(object):
         
         # Setup move_group handle
         move_group = moveit_commander.MoveGroupCommander(target_planning_group_name)
-        move_group.set_planning_time(0.2) # This sets a time limit for the planning of trajectories
+        move_group.set_planning_time(5.0) # This sets a time limit for the planning of trajectories
         move_group.set_max_velocity_scaling_factor(1.0) # Scaler for execution of trajectories
         move_group.set_max_acceleration_scaling_factor(1.0)
         move_group.set_goal_position_tolerance(0.001) # Set position tolerance
@@ -389,7 +389,7 @@ class Utils:
                 # Check if this pose is valid
                 wpoint_valid = self.iface.isValid(w)
                 if wpoint_valid:
-                    eef_step_size = 1.0  # 1m -> no interpolation, cartesian path will have as many points as pose vector in iface
+                    eef_step_size = 10 # 1m -> no interpolation, cartesian path will have as many points as pose vector in iface
                     # Plan a path
                     (plan, suc_frac) = self.iface.move_group.compute_cartesian_path(col_poses.poses + [w], float(eef_step_size),
                                                                                  0.0)  # last argument: jump_threshold -> not used
