@@ -48,16 +48,15 @@ kit = ServoKit(channels=16, frequency=333)
 # Class to store the duty cycles of the predefined states and who performs the mapping from duty cycle to [-1,1]
 class Joint:
 
-    def __init__(self, _name, _motor_pin, _default_dc=7.5, _min_dc=4.5, _middle_dc=7.5, _max_dc=10.5, invert=False) -> None:
+    def __init__(self, _name, _motor_pin, default_val=90, min_val=10, max_val=170, invert=False) -> None:
         # Init name, motor pin
         self.name = _name
         self.motor_pin = _motor_pin
 
         # Map min,middle,max,default value from full duty cycle range [4.5,10.5] to [-1,1] (necessary for PiGPIOFactory())
-        self.min_val = interp(_min_dc, [4.5, 10.5], [10, 170])
-        self.middle_val = interp(_middle_dc, [4.5, 10.5], [10, 170])
-        self.max_val = interp(_max_dc, [4.5, 10.5], [10, 170])
-        self.default_val = interp(_default_dc, [4.5, 10.5], [10, 170])
+        self.min_val = min_val
+        self.max_val = max_val
+        self.default_val = default_val
 
         # Init motor (by using the factory pattern from the gpiozero lib we can significantly reduce the jitter)
         self.servo = kit.servo[self.motor_pin]
@@ -78,7 +77,7 @@ class Joint:
         elif (_target_state == "0"):
             next_val = self.min_val
         elif (_target_state == "0.5"):
-            self.servo.angle = self.middle_val
+            self.servo.angle = self.default_val
         elif (_target_state == "1"):
             next_val = self.max_val
         else:
@@ -93,14 +92,12 @@ class Joint:
     # The input target_val is mapped to [-1,1], where the mapping also depends on the attachment of the threads to the servo.
     def set_to_itp_val(self, target_val):
         # Calculate the actual value to be written to the servo depending on which mapping type the servo has
+        intp_val = interp(target_val, [self.angMin, self.angMax], [self.min_val, self.max_val])
         if self.invert:
             # Attachment inversion
-            mi = min(self.min_val, self.max_val)
-            ma = max(self.min_val, self.max_val)
-            intp_val = interp(target_val, [self.angMin, self.angMax], [mi, ma])
-        else:
-            # No attachment inversion
-            intp_val = interp(target_val, [self.angMin, self.angMax], [self.min_val, self.max_val])
+            intp_val = 180 - intp_val
+
+
 
 
 
@@ -146,9 +143,9 @@ class Body:
         # Left arm
         self.joints["LH"] = Joint("LH",3, invert=True)
         self.joints["LW"] = Joint("LW", 2)
-        self.joints["LEB"] = Joint("LEB", 1)
+        self.joints["LEB"] = Joint("LEB", 1, invert=True)
         self.joints["LSH"] = Joint("LSH", 4)
-        self.joints["LSL"] = Joint("LSL", 0)
+        self.joints["LSL"] = Joint("LSL", 0, invert=True)
         self.joints["LSF"] = Joint("LSF", 5)
 
         # Right arm
