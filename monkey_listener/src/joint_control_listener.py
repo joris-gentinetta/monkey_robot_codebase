@@ -48,7 +48,7 @@ kit = ServoKit(channels=16, frequency=333)
 # Class to store the duty cycles of the predefined states and who performs the mapping from duty cycle to [-1,1]
 class Joint:
 
-    def __init__(self, _name, _motor_pin, default_val=90, min_val=10, max_val=170, invert=False) -> None:
+    def __init__(self, _name, _motor_pin, default_val=90, min_val=10, max_val=170, angmin=-1.571, angmax=1.571, invert=False) -> None:
         # Init name, motor pin
         self.name = _name
         self.motor_pin = _motor_pin
@@ -64,8 +64,8 @@ class Joint:
         self.servo.angle = self.default_val
 
         # Init model angle (per default set all to [-pi/half,pi/half])
-        self.angMin = -1.571
-        self.angMax = 1.571
+        self.angMin = angmin
+        self.angMax = angmax
         self.invert = invert
 
     # Set joint servo to one of 4 pre defined states {0,0.5,1,def}
@@ -96,11 +96,6 @@ class Joint:
         if self.invert:
             # Attachment inversion
             intp_val = 180 - intp_val
-
-
-
-
-
 
         # Write interpolated value to servo
         prev_val = self.servo.angle
@@ -141,50 +136,24 @@ class Body:
         # Init joints [name,pin,default,min,middle,max]
 
         # Left arm
-        self.joints["LH"] = Joint("LH",3, invert=True)
-        self.joints["LW"] = Joint("LW", 2)
-        self.joints["LEB"] = Joint("LEB", 1, invert=True)
-        self.joints["LSH"] = Joint("LSH", 4)
-        self.joints["LSL"] = Joint("LSL", 0, invert=True)
-        self.joints["LSF"] = Joint("LSF", 5)
+        self.joints["LH"] = Joint("LH",3, angmin=0, angmax=0, min_val=0, max_val=0, invert=True)
+        self.joints["LW"] = Joint("LW", 2, angmin=-1.4, angmax=1.4, min_val=10, max_val=170)
+        self.joints["LEB"] = Joint("LEB", 1, angmin=-1.4, angmax=0, min_val=90, max_val=170, invert=True)
+        self.joints["LSH"] = Joint("LSH", 4, angmin=-1.2, angmax=1.6, min_val=10, max_val=170)
+        self.joints["LSL"] = Joint("LSL", 0, angmin=-1.4, angmax=1.4, min_val=10, max_val=180, invert=True)
+        self.joints["LSF"] = Joint("LSF", 5, angmin=-2.186, angmax=0.615, min_val=10, max_val=180)
 
         # Right arm
-        self.joints["RH"] = Joint("RH",9)
-        self.joints["RW"] = Joint("RW", 8)
-        self.joints["REB"] = Joint("REB", 7)
-        self.joints["RSH"] = Joint("RSH", 10)
-        self.joints["RSL"] = Joint("RSL", 6)
-        self.joints["RSF"] = Joint("RSF", 11)
+        self.joints["RH"] = Joint("RH",9, angmin=0, angmax=0, min_val=0, max_val=0)
+        self.joints["RW"] = Joint("RW", 8, angmin=-1.4, angmax=1.4, min_val=10, max_val=180)
+        self.joints["REB"] = Joint("REB", 7, angmin=0, angmax=1.4, min_val=90, max_val=170)
+        self.joints["RSH"] = Joint("RSH", 10, angmin=-1.6, angmax=1.2, min_val=10, max_val=170)
+        self.joints["RSL"] = Joint("RSL", 6, angmin=-1.4, angmax=1.4, min_val=10, max_val=180)
+        self.joints["RSF"] = Joint("RSF", 11, angmin=-2.186, angmax=0.615, min_val=10, max_val=180)
 
         # Head
-        self.joints["NH"] = Joint("NF", 12)
-        self.joints["NF"] = Joint("NH", 13)
-
-
-
-
-        # # Set special angles and mapTypes
-        #
-        # self.joints["LEB"].angMin = 0
-        # self.joints["LEB"].angMax = 1.571
-        #
-        # self.joints["LSH"].angMin = -1.571
-        # self.joints["LSH"].angMax = -0.4955
-        #
-        # self.joints["RSF"].angMin = -1.571
-        # self.joints["RSF"].angMax = 1.176
-        #
-        # self.joints["RSL"].angMin = -1.123
-        # self.joints["RSL"].angMax = 1.571
-        # self.joints["RSL"].mapType = 1
-        #
-        # self.joints["RSH"].angMin = 0
-        # self.joints["RSH"].angMax = 1.571
-        # self.joints["RSH"].mapType = 2
-        #
-        # self.joints["REB"].angMin = -1.571
-        # self.joints["REB"].angMax = 0
-        # self.joints["REB"].mapType = 1
+        self.joints["NH"] = Joint("NF", 12, angmin=-1.4, angmax=1.4, min_val=10, max_val=180)
+        self.joints["NF"] = Joint("NH", 13, angmin=-1.4, angmax=1.4, min_val=10, max_val=180)
 
     # Set all servos to default position
     def allToDef(self):
