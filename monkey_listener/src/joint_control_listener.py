@@ -138,7 +138,7 @@ class Body:
         # Left arm
         self.joints["LH"] = Joint("LH",3, angmin=0, angmax=0, min_val=0, max_val=0, invert=True)
         self.joints["LW"] = Joint("LW", 2, angmin=-1.4, angmax=1.4, min_val=10, max_val=170)
-        self.joints["LEB"] = Joint("LEB", 1, angmin=-1.4, angmax=0, min_val=90, max_val=170, invert=True)
+        self.joints["LEB"] = Joint("LEB", 1, angmin=-1.4, angmax=0, min_val=10, max_val=90, invert=True)
         self.joints["LSH"] = Joint("LSH", 4, angmin=-1.2, angmax=1.6, min_val=10, max_val=170)
         self.joints["LSL"] = Joint("LSL", 0, angmin=-1.4, angmax=1.4, min_val=10, max_val=180, invert=True)
         self.joints["LSF"] = Joint("LSF", 5, angmin=-2.186, angmax=0.615, min_val=10, max_val=180)
