@@ -136,7 +136,7 @@ class Body:
         # Init joints [name,pin,default,min,middle,max]
 
         # Left arm
-        self.joints["LH"] = Joint("LH",3, angmin=0, angmax=0, min_val=0, max_val=0, invert=True)
+        self.joints["LH"] = Joint("LH",3, angmin=0, angmax=0, min_val=170, max_val=170, invert=True)
         self.joints["LW"] = Joint("LW", 2, angmin=-1.4, angmax=1.4, min_val=10, max_val=170)
         self.joints["LEB"] = Joint("LEB", 1, angmin=-1.4, angmax=0, min_val=10, max_val=90, invert=True)
         self.joints["LSH"] = Joint("LSH", 4, angmin=-1.2, angmax=1.6, min_val=10, max_val=170)
@@ -144,7 +144,7 @@ class Body:
         self.joints["LSF"] = Joint("LSF", 5, angmin=-2.186, angmax=0.615, min_val=10, max_val=180)
 
         # Right arm
-        self.joints["RH"] = Joint("RH",9, angmin=0, angmax=0, min_val=0, max_val=0)
+        self.joints["RH"] = Joint("RH",9, angmin=0, angmax=0, min_val=170, max_val=170)
         self.joints["RW"] = Joint("RW", 8, angmin=-1.4, angmax=1.4, min_val=10, max_val=180)
         self.joints["REB"] = Joint("REB", 7, angmin=0, angmax=1.4, min_val=90, max_val=170)
         self.joints["RSH"] = Joint("RSH", 10, angmin=-1.6, angmax=1.2, min_val=10, max_val=170)

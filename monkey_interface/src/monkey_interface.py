@@ -308,7 +308,7 @@ class MoveGroupInterface(object):
 # - Planning, displaying and executing a single pose goal
 # - Collecting waypoints in gui and computing a trajectory T for the eef of one planning group to go through
 # - Saving, loading and editing of T
-# This helper class could be integrated into the moveGroupInteface, this would however decrease code readability.
+# This helper class could be integrated into the moveGroupInterface, this would however decrease code readability.
 class Utils:
     def __init__(self,_interface) -> None:
         # A handle to the moveGroupInteface is necessary for some actions. 
@@ -361,12 +361,68 @@ class Utils:
             wp_collecting_intent_status = input("Do you want to add another waypoint? [ Enter | no]")
         
         return col_poses
-    
+
+    def collect_wpoints_in_gui_genti(self, initial_wp_count):
+        wcounter = initial_wp_count  # For the shell interaction a waypoint counter is needed. An initial_count != 0 means that we will append new poses to a poseArray loaded form a json file
+        wp_collecting_intent_status = " "
+        wp_ns = "collected_waypoint"
+        col_poses = PoseArray()  # Create empty poseArray
+        # If initial_wp_count is greater 1 this means we are not populating an empty poseArray, but instead appending new poses to an existing poseArray
+        if initial_wp_count > 1:
+            self.appending = True
+            col_poses = self.iface.loaded_json_wpoints
+            wp_ns = "appended_waypoints"
+        # Collect as many poses as the user wants
+        while wp_collecting_intent_status == "":
+            wpoint_valid = False
+            # Try to get a valid wpoint
+            while not wpoint_valid:
+                print("Move EEF to waypoint ", wcounter)
+                input("To save waypoint press [Enter]")
+                # Get the last recorded pose of the interactive marker
+                if self.iface.last_rec_im_pose:
+                    w = self.iface.last_rec_im_pose
+                else:
+                    print("No IM pose has been recorded yet. Have you moved the IM?")
+                    continue
+
+                # Check if this pose is valid
+                wpoint_valid = self.iface.isValid(w)
+                if wpoint_valid:
+                    eef_step_size = 1.0  # 1m -> no interpolation, cartesian path will have as many points as pose vector in iface
+                    # Plan a path
+                    (plan, suc_frac) = self.iface.move_group.compute_cartesian_path(col_poses + [w], float(eef_step_size),
+                                                                                 0.0)  # last argument: jump_threshold -> not used
+                    if suc_frac == 1.0:
+                        break
+                    else:
+                        try_again_dec = input(
+                            "Planning failed. Do you want to try again? [Enter | no]")
+                        if try_again_dec != "":
+                            return None
+                else:
+                    try_again_dec = input(
+                        "Invalid waypoint (outside robot range). Do you want to try again? [Enter | no]")
+                    if try_again_dec != "":
+                        return None
+
+            col_poses.poses.append(w)
+            # Append collected wpoint to wpoints stored in iface
+            self.iface.wpoints.append(w)
+            # Create marker for this waypoint
+            self.iface.createMarker(w, wp_ns)
+            wcounter += 1
+            # Publish markers
+            self.iface.markerArrayPub.publish(self.iface.markerArray)
+            # Query continuation of waypoint collection
+            wp_collecting_intent_status = input("Do you want to add another waypoint? [ Enter | no]")
+
+        return col_poses
     # Query saving of poseArray from user, if desired query name of json file to save poseArray to. The file name without .json
     def querySave(self,pa):       
         # Query saving from user
         ans = input("Do you want to save these waypoints? [yes | Enter]")
-        if ans == "yes":
+        if ans != "":
             # Query target json file name (without .json ending)
             desired_filename = input("Please specify an (unused) filename without file type: ")
             # Consctruct path name
@@ -556,7 +612,7 @@ def main():
         elif mode == 3: # Let user collect waypoints in gui, query save and finally query execution
 
             # Collect waypoints in gui
-            collected_pose_array = helper.collect_wpoints_in_gui(1) 
+            collected_pose_array = helper.collect_wpoints_in_gui_genti(1)
             if collected_pose_array:
                 # Ask user if he wants to save
                 helper.querySave(collected_pose_array)
@@ -575,6 +631,9 @@ def main():
         elif mode == 5: # Exit
             pass
 
+        elif mode == 6:
+
+
         else:
             print("Unrecognized mode")
 
@@ -584,8 +643,8 @@ def main():
         
     except rospy.ROSInterruptException:
         return
-    except KeyboardInterrupt:
-        return
+    # except KeyboardInterrupt:
+    #     return
 
 
 if __name__ == "__main__":
