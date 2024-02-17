@@ -146,9 +146,9 @@ class Body:
         # Left arm
         self.joints["LH"] = Joint("LH",3, invert=True)
         self.joints["LW"] = Joint("LW", 2)
-        self.joints["LEB"] = Joint("LEB", 1, invert=True)
+        self.joints["LEB"] = Joint("LEB", 1)
         self.joints["LSH"] = Joint("LSH", 4)
-        self.joints["LSL"] = Joint("LSL", 0, invert=True)
+        self.joints["LSL"] = Joint("LSL", 0)
         self.joints["LSF"] = Joint("LSF", 5)
 
         # Right arm
