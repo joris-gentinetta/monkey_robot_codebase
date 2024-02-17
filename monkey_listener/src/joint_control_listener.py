@@ -78,7 +78,7 @@ class Joint:
         elif (_target_state == "0"):
             next_val = self.min_val
         elif (_target_state == "0.5"):
-            self.servo.value = self.middle_val
+            self.servo.angle = self.middle_val
         elif (_target_state == "1"):
             next_val = self.max_val
         else:
@@ -87,7 +87,7 @@ class Joint:
         # Log which value was set to which motor
         rospy.loginfo("Setting %s to [itp %s]", self.name, next_val)
         # Write value to motor
-        self.servo.value = next_val
+        self.servo.angle = next_val
 
     # Set joint servo to a value in [-1,1].
     # The input target_val is mapped to [-1,1], where the mapping also depends on the attachment of the threads to the servo.
@@ -106,8 +106,8 @@ class Joint:
 
 
         # Write interpolated value to servo
-        prev_val = self.servo.value
-        self.servo.value = float(intp_val)
+        prev_val = self.servo.angle
+        self.servo.angle = float(intp_val)
         if abs(prev_val - intp_val) > 0.1:
             # Log interpolated value and original target value
             intp_val = '%.2f' % intp_val
@@ -115,17 +115,17 @@ class Joint:
             # target_val_deg = int(math.degrees(target_val))
             rospy.loginfo("Setting %s to [%s radians] -> [itp %s] ", self.name, target_val, intp_val)
 
-    # Sweep through predefined states
-    def sweep(self):
-        delay = 1.0
-        self.setState("0")
-        rospy.sleep(delay)
-        self.setState("0.5")
-        rospy.sleep(delay)
-        self.setState("1")
-        rospy.sleep(delay)
-        self.setState("def")
-        rospy.sleep(delay)
+    # # Sweep through predefined states
+    # def sweep(self):
+    #     delay = 1.0
+    #     self.setState("0")
+    #     rospy.sleep(delay)
+    #     self.setState("0.5")
+    #     rospy.sleep(delay)
+    #     self.setState("1")
+    #     rospy.sleep(delay)
+    #     self.setState("def")
+    #     rospy.sleep(delay)
 
 
 # Joint class done =========================================================================================
