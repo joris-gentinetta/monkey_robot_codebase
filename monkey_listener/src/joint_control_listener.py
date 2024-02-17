@@ -106,12 +106,14 @@ class Joint:
 
 
         # Write interpolated value to servo
+        prev_val = self.servo.value
         self.servo.value = float(intp_val)
-        # Log interpolated value and original target value
-        intp_val = '%.2f' % intp_val
-        target_val = '%.3f' % target_val
-        # target_val_deg = int(math.degrees(target_val))
-        rospy.loginfo("Setting %s to [%s radians] -> [itp %s] ", self.name, target_val, intp_val)
+        if abs(prev_val - intp_val) > 0.1:
+            # Log interpolated value and original target value
+            intp_val = '%.2f' % intp_val
+            target_val = '%.3f' % target_val
+            # target_val_deg = int(math.degrees(target_val))
+            rospy.loginfo("Setting %s to [%s radians] -> [itp %s] ", self.name, target_val, intp_val)
 
     # Sweep through predefined states
     def sweep(self):

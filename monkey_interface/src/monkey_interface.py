@@ -345,7 +345,7 @@ class Utils:
                     break
                 else:
                     try_again_dec =input("Invalid waypoint (outside robot range). Do you want to try again? [Enter | no]")
-                    if try_again_dec == "no":
+                    if try_again_dec != "":
                         return None
 
 
@@ -427,8 +427,8 @@ class Utils:
     # Query if user wants to plan to a cartesian path. If so, plan it. Then, query for execution. If planning failed, exit.
     def queryCPP(self,col_pa):
         # Query planning of cartesian path
-        execute_cart_path_goal_dec = input("Do you want to plan a cart. path from the waypoints? [yes | Enter]")
-        if execute_cart_path_goal_dec == "yes":
+        execute_cart_path_goal_dec = input("Do you want to plan a cart. path from the waypoints? [Enter for yes, any key for no]\n")
+        if execute_cart_path_goal_dec == "":
             eef_step_size = 1.0 # 1m -> no interpolation, cartesian path will have as many points as pose vector in iface 
             # Plan a path
             (plan, suc_frac) = self.iface.move_group.compute_cartesian_path(col_pa.poses, float(eef_step_size), 0.0) # last argument: jump_threshold -> not used
@@ -442,8 +442,8 @@ class Utils:
                 # Publish the plan
                 self.iface.display_trajectory_publisher.publish(display_trajectory)
                 # Query decision to execute cart. plan
-                exec_dec = input("Do you want to execute the cart. plan? [yes | Enter]")
-                if exec_dec == "yes":
+                exec_dec = input("Do you want to execute the cart. plan? [Enter for yes, any key for no]")
+                if exec_dec == "":
                     self.iface.move_group.execute(plan, wait=True) # Waits until feedback from execution is received
                 # Query save
                 self.querySave(col_pa)
@@ -468,12 +468,12 @@ class Utils:
                 self.iface.markerArrayPub.publish(self.iface.markerArray)
                 print("Waypoints were loaded and are being displayed")
                 # Query if user wishes to continue
-                cont_ans = input("Do you wish to continue? [yes | Enter]")
-                if cont_ans == "yes":
+                cont_ans = input("Do you wish to continue? [Enter for yes, any key for no]")
+                if cont_ans == "":
                     # Query adding of new waypoints
-                    question = "Do you want to add new waypoints to the file "+file_name+" ? [yes | Enter]"
+                    question = "Do you want to add new waypoints to the file "+file_name+" ? [Enter for yes, any key for no]"
                     edit_ans = input(question)
-                    if edit_ans == "yes":
+                    if edit_ans == "":
                         # If no waypoints are loaded, inform user and exit
                         if self.iface.loaded_json_wpoints == None:
                             print("No waypoints were loaded!")
