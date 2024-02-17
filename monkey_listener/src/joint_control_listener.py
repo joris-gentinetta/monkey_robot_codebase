@@ -136,7 +136,7 @@ class Body:
         # Init joints [name,pin,default,min,middle,max]
 
         # Left arm
-        self.joints["LH"] = Joint("LH",3, default_val=170, angmin=-1.4, angmax=1.4, min_val=165, max_val=170, invert=True)
+        self.joints["LH"] = Joint("LH",3, default_val=10, angmin=-1.4, angmax=1.4, min_val=165, max_val=170, invert=True)
         self.joints["LW"] = Joint("LW", 2, angmin=-1.4, angmax=1.4, min_val=10, max_val=170)
         self.joints["LEB"] = Joint("LEB", 1, angmin=-1.4, angmax=0, min_val=10, max_val=90, invert=True)
         self.joints["LSH"] = Joint("LSH", 4, angmin=-1.2, angmax=1.6, min_val=10, max_val=170)
