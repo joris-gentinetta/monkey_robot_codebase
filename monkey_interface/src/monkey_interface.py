@@ -535,44 +535,23 @@ class Utils:
     def join_plans(self, planL, planR):
         # Combine joint names from both plans
         print('planL: \n', planL)
+        combined_plan = copy.deepcopy(planL)
 
         joint_names = planL.joint_trajectory.joint_names + planR.joint_trajectory.joint_names
+        combined_plan.joint_trajectory.joint_names = joint_names
 
         # Assuming both plans have the same number of points and corresponding timestamps
-        points = []
+        combined_plan.joint_trajectory.points = []
         for pointL, pointR in zip(planL.joint_trajectory.points, planR.joint_trajectory.points):
+            point = copy.deepcopy(pointL)
             # Combine positions, velocities, accelerations, and effort
-            positions = pointL['positions'] + pointR['positions']
-            velocities = pointL['velocities'] + pointR['velocities']
-            accelerations = pointL['accelerations'] + pointR['accelerations']
-            effort = pointL['effort'] + pointR['effort']  # Assuming effort is relevant and should be concatenated
+            point.positions = pointL.positions + pointR.positions
+            point.velocities = pointL.velocities + pointR.velocities
+            point.accelerations = pointL.accelerations + pointR.accelerations
+            point.effort = pointL.effort + pointR.effort  # Assuming effort is relevant and should be concatenated
 
-            # Use time_from_start from planL or planR (assuming they are the same or only one is relevant)
-            time_from_start = pointL['time_from_start']
-
-            # Combine into a new point
-            point = {
-                'positions': positions,
-                'velocities': velocities,
-                'accelerations': accelerations,
-                'effort': effort,
-                'time_from_start': time_from_start
-            }
-            points.append(point)
-
-        # Create the combined joint_trajectory
-        joint_trajectory = {
-            'header': planL['joint_trajectory']['header'],  # Assuming header from planL is fine
-            'joint_names': joint_names,
-            'points': points
-        }
-
-        # Assuming multi_dof_joint_trajectory is not needed or can be copied from one of the plans
-        combined_plan = {
-            'joint_trajectory': joint_trajectory,
-            'multi_dof_joint_trajectory': planL['multi_dof_joint_trajectory']
-        }
-
+            combined_plan.joint_trajectory.points.append(point)
+        print('combined_plan: \n', combined_plan)
         return combined_plan
 
 
