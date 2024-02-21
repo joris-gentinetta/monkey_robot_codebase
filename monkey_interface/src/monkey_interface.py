@@ -340,8 +340,11 @@ class Utils:
                 # Get the last recorded pose of the interactive marker
                 # if self.iface.last_rec_im_pose:
                 wLA = self.ifaceLA.last_rec_im_pose
+                print(wLA)
                 wRA = self.ifaceRA.last_rec_im_pose
+                print(wRA)
                 wH = self.ifaceH.last_rec_im_pose
+                print(wH)
                 # else:
                 #     print("No IM pose has been recorded yet. Have you moved the IM?")
                 #     continue
