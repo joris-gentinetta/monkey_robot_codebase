@@ -115,7 +115,7 @@ class Body:
         self.joints["RH"] = Joint("RH",9, default_val=170, angmin=-1.4, angmax=1.4, min_val=165, max_val=170)
         self.joints["RW"] = Joint("RW", 8, angmin=-1.4, angmax=1.4, min_val=10, max_val=180)
         self.joints["REB"] = Joint("REB", 7, angmin=0, angmax=1.4, min_val=90, max_val=170, invert=True)
-        self.joints["RSH"] = Joint("RSH", 10, angmin=-1.6, angmax=1.2, min_val=10, max_val=170)
+        self.joints["RSH"] = Joint("RSH", 10, angmin=-1.6, angmax=1.2, min_val=10, max_val=170, invert=True)
         self.joints["RSL"] = Joint("RSL", 6, angmin=-1.4, angmax=1.4, min_val=10, max_val=180, invert=True)
         self.joints["RSF"] = Joint("RSF", 11, angmin=-2.186, angmax=0.615, min_val=10, max_val=180, invert=True)
 
