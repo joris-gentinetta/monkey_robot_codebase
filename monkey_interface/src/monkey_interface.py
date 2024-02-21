@@ -521,16 +521,58 @@ class Utils:
                 print(planLA)
                 print('\n\n\n-------------------\n\n\n')
                 print(planRA)
+                combined_plan = self.join_plans(planLA, planRA)
                 # Publish the plan
                 self.ifaceLA.display_trajectory_publisher.publish(display_trajectory)
                 # Query decision to execute cart. plan
                 exec_dec = input("Do you want to execute the cart. plan? [Enter for yes, any key for no]")
                 if exec_dec == "":
-                    self.ifaceLA.move_group.execute(planLA, wait=True)  # Waits until feedback from execution is received
+                    self.ifaceLA.move_group.execute(combined_plan, wait=True)  # Waits until feedback from execution is received
                 # Query save
                 # self.querySave(col_pa)
             else:
                 print("Planning failed")
+    def join_plans(self, planL, planR):
+        # Combine joint names from both plans
+        joint_names = planL['joint_trajectory']['joint_names'] + planR['joint_trajectory']['joint_names']
+
+        # Assuming both plans have the same number of points and corresponding timestamps
+        points = []
+        for pointL, pointR in zip(planL['joint_trajectory']['points'], planR['joint_trajectory']['points']):
+            # Combine positions, velocities, accelerations, and effort
+            positions = pointL['positions'] + pointR['positions']
+            velocities = pointL['velocities'] + pointR['velocities']
+            accelerations = pointL['accelerations'] + pointR['accelerations']
+            effort = pointL['effort'] + pointR['effort']  # Assuming effort is relevant and should be concatenated
+
+            # Use time_from_start from planL or planR (assuming they are the same or only one is relevant)
+            time_from_start = pointL['time_from_start']
+
+            # Combine into a new point
+            point = {
+                'positions': positions,
+                'velocities': velocities,
+                'accelerations': accelerations,
+                'effort': effort,
+                'time_from_start': time_from_start
+            }
+            points.append(point)
+
+        # Create the combined joint_trajectory
+        joint_trajectory = {
+            'header': planL['joint_trajectory']['header'],  # Assuming header from planL is fine
+            'joint_names': joint_names,
+            'points': points
+        }
+
+        # Assuming multi_dof_joint_trajectory is not needed or can be copied from one of the plans
+        combined_plan = {
+            'joint_trajectory': joint_trajectory,
+            'multi_dof_joint_trajectory': planL['multi_dof_joint_trajectory']
+        }
+
+        return combined_plan
+
 
     # Query the user for the name of json file containing a poseArray, then query saving of cart. path, then query execution of cart. path
     # def loadWaypointsFromJSON(self):
