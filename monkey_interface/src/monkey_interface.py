@@ -518,9 +518,9 @@ class Utils:
                 display_trajectory = moveit_msgs.msg.DisplayTrajectory()
                 display_trajectory.trajectory_start = self.ifaceLA.robot.get_current_state()
                 display_trajectory.trajectory.append(planLA)
-                print(planLA)
-                print('\n\n\n-------------------\n\n\n')
-                print(planRA)
+                # print(planLA)
+                # print('\n\n\n-------------------\n\n\n')
+                # print(planRA)
                 combined_plan = self.join_plans(planLA, planRA)
                 # Publish the plan
                 self.ifaceLA.display_trajectory_publisher.publish(display_trajectory)
@@ -534,6 +534,10 @@ class Utils:
                 print("Planning failed")
     def join_plans(self, planL, planR):
         # Combine joint names from both plans
+        print('planL: \n', planL)
+        print('joint_trajectory: \n', planL['joint_trajectory'])
+        print('joint_names: \n', planL['joint_trajectory']['joint_names'])
+
         joint_names = planL['joint_trajectory']['joint_names'] + planR['joint_trajectory']['joint_names']
 
         # Assuming both plans have the same number of points and corresponding timestamps
