@@ -351,7 +351,8 @@ class Utils:
 
                 # Check if this pose is valid
                 # wpoint_valid = self.iface.isValid(w)
-                if self.ifaceLA.isValid(wLA) and self.ifaceRA.isValid(wRA) and self.ifaceH.isValid(wH):
+                wpoint_valid = self.ifaceLA.isValid(wLA) and self.ifaceRA.isValid(wRA) and self.ifaceH.isValid(wH)
+                if wpoint_valid:
                     eef_step_size = 10 # 1m -> no interpolation, cartesian path will have as many points as pose vector in iface
                     # Plan a path
                     (planLA, suc_fracLA) = self.ifaceLA.move_group.compute_cartesian_path(col_posesLA.poses + [wLA], float(eef_step_size),
