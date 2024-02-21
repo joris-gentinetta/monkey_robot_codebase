@@ -1,4 +1,4 @@
-git pull
+#git pull
 cp -r /home/robot-user/monkey_robot_codebase/monkey_interface/ /home/robot-user/ws_moveit/src/
 
 cd /home/robot-user/ws_moveit || exit

@@ -127,7 +127,7 @@ class Body:
     def allToDef(self):
         for k, j in self.joints.items():
             j.angle = j.default_val
-            rospy.loginfo("Setting %s to [itp %s]", self.name, j.default_val)
+            rospy.loginfo("Setting %s to [itp %s]", j.name, j.default_val)
         rospy.sleep(1.0)
 
     # Update joints according to incoming joint target joint states
