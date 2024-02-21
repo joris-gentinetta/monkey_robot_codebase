@@ -335,34 +335,19 @@ class Utils:
             wpoint_valid = False
             # Try to get a valid wpoint
             while not wpoint_valid:
-                print("Move EEF to waypoint ", wcounter)
+                print("Move left arm to wp ", wcounter)
                 input("To save waypoint press [Enter]")
                 # Get the last recorded pose of the interactive marker
                 # if self.iface.last_rec_im_pose:
                 wLA = self.ifaceLA.last_rec_im_pose
                 print(wLA)
-                wRA = self.ifaceRA.last_rec_im_pose
-                print(wRA)
-                wH = self.ifaceH.last_rec_im_pose
-                print(wH)
-                # else:
-                #     print("No IM pose has been recorded yet. Have you moved the IM?")
-                #     continue
-
-                # Check if this pose is valid
-                # wpoint_valid = self.iface.isValid(w)
-                wpoint_valid = self.ifaceLA.isValid(wLA) and self.ifaceRA.isValid(wRA) and self.ifaceH.isValid(wH)
+                wpoint_valid = self.ifaceLA.isValid(wLA)
                 if wpoint_valid:
                     eef_step_size = 10 # 1m -> no interpolation, cartesian path will have as many points as pose vector in iface
                     # Plan a path
                     (planLA, suc_fracLA) = self.ifaceLA.move_group.compute_cartesian_path(col_posesLA.poses + [wLA], float(eef_step_size),
                                                                                  0.0)
-                    (planRA, suc_fracRA) = self.ifaceRA.move_group.compute_cartesian_path(col_posesRA.poses + [wRA], float(eef_step_size),
-                                                                                    0.0)
-                    (planH, suc_fracH) = self.ifaceH.move_group.compute_cartesian_path(col_posesH.poses + [wH], float(eef_step_size),
-                                                                                    0.0)
-
-                    if suc_fracLA == 1.0 and suc_fracRA == 1.0 and suc_fracH == 1.0:
+                    if suc_fracLA == 1.0:
                         break
                     else:
                         try_again_dec = input(
@@ -374,6 +359,63 @@ class Utils:
                         "Invalid waypoint (outside robot range). Do you want to try again? [Enter | no]")
                     if try_again_dec != "":
                         return None
+
+            wpoint_valid = False
+            while not wpoint_valid:
+                print("Move right arm to wp ", wcounter)
+                input("To save waypoint press [Enter]")
+                # Get the last recorded pose of the interactive marker
+                # if self.iface.last_rec_im_pose:
+                wRA = self.ifaceRA.last_rec_im_pose
+                print(wRA)
+                wpoint_valid = self.ifaceRA.isValid(wRA)
+                if wpoint_valid:
+                    eef_step_size = 10 # 1m -> no interpolation, cartesian path will have as many points as pose vector in iface
+                    # Plan a path
+                    (planRA, suc_fracRA) = self.ifaceRA.move_group.compute_cartesian_path(col_posesRA.poses + [wRA], float(eef_step_size),
+                                                                                 0.0)
+                    if suc_fracRA == 1.0:
+                        break
+                    else:
+                        try_again_dec = input(
+                            "Planning failed. Do you want to try again? [Enter | no]")
+                        if try_again_dec != "":
+                            return None
+                else:
+                    try_again_dec = input(
+                        "Invalid waypoint (outside robot range). Do you want to try again? [Enter | no]")
+                    if try_again_dec != "":
+                        return None
+
+            wpoint_valid = False
+            while not wpoint_valid:
+                print("Move right arm to wp ", wcounter)
+                input("To save waypoint press [Enter]")
+                # Get the last recorded pose of the interactive marker
+                # if self.iface.last_rec_im_pose:
+                wH = self.ifaceH.last_rec_im_pose
+                print(wH)
+                wpoint_valid = self.ifaceH.isValid(wH)
+                if wpoint_valid:
+                    eef_step_size = 10  # 1m -> no interpolation, cartesian path will have as many points as pose vector in iface
+                    # Plan a path
+                    (planH, suc_fracH) = self.ifaceH.move_group.compute_cartesian_path(col_posesH.poses + [wH],
+                                                                                          float(eef_step_size),
+                                                                                          0.0)
+                    if suc_fracH == 1.0:
+                        break
+                    else:
+                        try_again_dec = input(
+                            "Planning failed. Do you want to try again? [Enter | no]")
+                        if try_again_dec != "":
+                            return None
+                else:
+                    try_again_dec = input(
+                        "Invalid waypoint (outside robot range). Do you want to try again? [Enter | no]")
+                    if try_again_dec != "":
+                        return None
+
+
 
             col_posesLA.poses.append(wLA)
             col_posesRA.poses.append(wRA)
