@@ -535,8 +535,11 @@ class Utils:
     def join_plans(self, planL, planR):
         # Combine joint names from both plans
         print('planL: \n', planL)
-        print('joint_trajectory: \n', planL['joint_trajectory'])
-        print('joint_names: \n', planL['joint_trajectory']['joint_names'])
+        print('joint_trajectory: \n', planL.joint_trajectory)
+        try:
+            print('joint_names class: \n', planL.joint_trajectory.joint_names)
+        except:
+            print('joint_names dict: \n', planL.joint_trajectory['joint_names'])
 
         joint_names = planL['joint_trajectory']['joint_names'] + planR['joint_trajectory']['joint_names']
 
