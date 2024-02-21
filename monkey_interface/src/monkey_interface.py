@@ -314,7 +314,7 @@ class Utils:
         # A handle to the moveGroupInteface is necessary for some actions.
         self.ifaceLA = interface_left_arm
         self.ifaceRA = inteface_right_arm
-        self.ifaceH = interface_head
+        # self.ifaceH = interface_head
 
     # Let user collect an arbitrary number of waypoints in gui, return the collected waypoints
 
@@ -324,7 +324,7 @@ class Utils:
         wp_ns = "collected_waypoint"
         col_posesLA = PoseArray()  # Create empty poseArray
         col_posesRA = PoseArray()
-        col_posesH = PoseArray()
+        # col_posesH = PoseArray()
         # If initial_wp_count is greater 1 this means we are not populating an empty poseArray, but instead appending new poses to an existing poseArray
         # if initial_wp_count > 1:
         #     self.appending = True
@@ -387,58 +387,58 @@ class Utils:
                     if try_again_dec != "":
                         return None
 
-            wpoint_valid = False
-            while not wpoint_valid:
-                print("Move right arm to wp ", wcounter)
-                input("To save waypoint press [Enter]")
-                # Get the last recorded pose of the interactive marker
-                # if self.iface.last_rec_im_pose:
-                wH = self.ifaceH.last_rec_im_pose
-                print(wH)
-                wpoint_valid = self.ifaceH.isValid(wH)
-                if wpoint_valid:
-                    eef_step_size = 10  # 1m -> no interpolation, cartesian path will have as many points as pose vector in iface
-                    # Plan a path
-                    (planH, suc_fracH) = self.ifaceH.move_group.compute_cartesian_path(col_posesH.poses + [wH],
-                                                                                          float(eef_step_size),
-                                                                                          0.0)
-                    if suc_fracH == 1.0:
-                        break
-                    else:
-                        try_again_dec = input(
-                            "Planning failed. Do you want to try again? [Enter | no]")
-                        if try_again_dec != "":
-                            return None
-                else:
-                    try_again_dec = input(
-                        "Invalid waypoint (outside robot range). Do you want to try again? [Enter | no]")
-                    if try_again_dec != "":
-                        return None
+            # wpoint_valid = False
+            # while not wpoint_valid:
+            #     print("Move head to wp ", wcounter)
+            #     input("To save waypoint press [Enter]")
+            #     # Get the last recorded pose of the interactive marker
+            #     # if self.iface.last_rec_im_pose:
+            #     wH = self.ifaceH.last_rec_im_pose
+            #     print(wH)
+            #     wpoint_valid = self.ifaceH.isValid(wH)
+            #     if wpoint_valid:
+            #         eef_step_size = 10  # 1m -> no interpolation, cartesian path will have as many points as pose vector in iface
+            #         # Plan a path
+            #         (planH, suc_fracH) = self.ifaceH.move_group.compute_cartesian_path(col_posesH.poses + [wH],
+            #                                                                               float(eef_step_size),
+            #                                                                               0.0)
+            #         if suc_fracH == 1.0:
+            #             break
+            #         else:
+            #             try_again_dec = input(
+            #                 "Planning failed. Do you want to try again? [Enter | no]")
+            #             if try_again_dec != "":
+            #                 return None
+            #     else:
+            #         try_again_dec = input(
+            #             "Invalid waypoint (outside robot range). Do you want to try again? [Enter | no]")
+            #         if try_again_dec != "":
+            #             return None
 
 
 
             col_posesLA.poses.append(wLA)
             col_posesRA.poses.append(wRA)
-            col_posesH.poses.append(wH)
+            # col_posesH.poses.append(wH)
             # Append collected wpoint to wpoints stored in iface
             self.ifaceLA.wpoints.append(wLA)
             self.ifaceRA.wpoints.append(wRA)
-            self.ifaceH.wpoints.append(wH)
+            # self.ifaceH.wpoints.append(wH)
             # Create marker for this waypoint
 
             self.ifaceLA.createMarker(wLA, wp_ns)
             self.ifaceRA.createMarker(wRA, wp_ns)
-            self.ifaceH.createMarker(wH, wp_ns)
+            # self.ifaceH.createMarker(wH, wp_ns)
 
             wcounter += 1
             # Publish markers
             self.ifaceLA.markerArrayPub.publish(self.ifaceLA.markerArray)
             self.ifaceRA.markerArrayPub.publish(self.ifaceRA.markerArray)
-            self.ifaceH.markerArrayPub.publish(self.ifaceH.markerArray)
+            # self.ifaceH.markerArrayPub.publish(self.ifaceH.markerArray)
             # Query continuation of waypoint collection
             wp_collecting_intent_status = input("Do you want to add another waypoint? [ Enter | no]")
 
-        return col_posesLA, col_posesRA, col_posesH
+        return col_posesLA, col_posesRA #, col_posesH
     # Query saving of poseArray from user, if desired query name of json file to save poseArray to. The file name without .json
     def querySave(self,pa):
         # Query saving from user
@@ -502,7 +502,7 @@ class Utils:
             self.iface.go_to_pose_goal(pose_goal)
 
     # Query if user wants to plan to a cartesian path. If so, plan it. Then, query for execution. If planning failed, exit.
-    def queryCPP(self,col_paLA, col_paRA, col_paH):
+    def queryCPP(self,col_paLA, col_paRA): #, col_paH):
         # Query planning of cartesian path
         execute_cart_path_goal_dec = input("Do you want to plan a cart. path from the waypoints? [Enter for yes, any key for no]\n")
         if execute_cart_path_goal_dec == "":
@@ -510,10 +510,10 @@ class Utils:
             # Plan a path
             (planLA, suc_fracLA) = self.ifaceLA.move_group.compute_cartesian_path(col_paLA.poses, float(eef_step_size), 0.0) # last argument: jump_threshold -> not used
             (planRA, suc_fracRA) = self.ifaceRA.move_group.compute_cartesian_path(col_paRA.poses, float(eef_step_size), 0.0) # last argument: jump_threshold -> not used
-            (planH, suc_fracH) = self.ifaceH.move_group.compute_cartesian_path(col_paH.poses, float(eef_step_size), 0.0) # last argument: jump_threshold -> not used
+            # (planH, suc_fracH) = self.ifaceH.move_group.compute_cartesian_path(col_paH.poses, float(eef_step_size), 0.0) # last argument: jump_threshold -> not used
             # Inform user of success fraction
-            print(f"Sucess fraction LA: {suc_fracLA}, RA: {suc_fracRA}, H: {suc_fracH}")
-            if suc_fracLA == 1.0 and suc_fracRA == 1.0 and suc_fracH == 1.0:
+            print(f"Sucess fraction LA: {suc_fracLA}, RA: {suc_fracRA}") #, H: {suc_fracH}")
+            if suc_fracLA == 1.0 and suc_fracRA == 1.0: # and suc_fracH == 1.0:
                 # Display the plan
                 display_trajectory = moveit_msgs.msg.DisplayTrajectory()
                 display_trajectory.trajectory_start = self.ifaceLA.robot.get_current_state()
@@ -640,7 +640,8 @@ def main():
         elif mode == 3: # Let user collect waypoints in gui, query save and finally query execution
 
             # Collect waypoints in gui
-            collected_pose_arrayLA, collected_pose_arrayRA, collected_pose_arrayH = helper.collect_wpoints_in_gui_genti(1)
+            # collected_pose_arrayLA, collected_pose_arrayRA, collected_pose_arrayH = helper.collect_wpoints_in_gui_genti(1)
+            collected_pose_arrayLA, collected_pose_arrayRA = helper.collect_wpoints_in_gui_genti(1)
         # if collected_pose_array:
             # Ask user if he wants to save
             # helper.querySave(collected_pose_array)
@@ -651,8 +652,8 @@ def main():
             interface_head.markerArrayPub.publish(interface_head.markerArray)
 
             # Query decision to plan car. path
-            helper.queryCPP(collected_pose_arrayLA, collected_pose_arrayRA, collected_pose_arrayH)
-            
+            # helper.queryCPP(collected_pose_arrayLA, collected_pose_arrayRA, collected_pose_arrayH)
+            helper.queryCPP(collected_pose_arrayLA, collected_pose_arrayRA)
         elif mode == 4: # Load waypoints from json, potentially edit them
 
             # Query json file name, load poseArray, query appending new poses     
