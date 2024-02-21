@@ -45,15 +45,15 @@ import yaml #pyright: ignore
 from rospy_message_converter import json_message_converter #pyright: ignore
 from std_msgs.msg import String #pyright: ignore
 
-# try:
-from math import pi, TWO_PI, dist, fabs, cos
-# except:  # For Python 2 compatibility
-#     from math import pi, fabs, cos, sqrt
-#
-#     TWO_PI = 2.0 * pi
-#
-#     def dist(p, q):
-#         return sqrt(sum((p_i - q_i) ** 2.0 for p_i, q_i in zip(p, q)))
+try:
+    from math import pi, TWO_PI, dist, fabs, cos
+except:  # For Python 2 compatibility
+    from math import pi, fabs, cos, sqrt
+
+    TWO_PI = 2.0 * pi
+
+    def dist(p, q):
+        return sqrt(sum((p_i - q_i) ** 2.0 for p_i, q_i in zip(p, q)))
 
 # imports done =============================================================================================
 
