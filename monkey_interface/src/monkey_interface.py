@@ -45,15 +45,15 @@ import yaml #pyright: ignore
 from rospy_message_converter import json_message_converter #pyright: ignore
 from std_msgs.msg import String #pyright: ignore
 
-try:
-    from math import pi, TWO_PI, dist, fabs, cos
-except:  # For Python 2 compatibility
-    from math import pi, fabs, cos, sqrt
-
-    TWO_PI = 2.0 * pi
-
-    def dist(p, q):
-        return sqrt(sum((p_i - q_i) ** 2.0 for p_i, q_i in zip(p, q)))
+# try:
+from math import pi, TWO_PI, dist, fabs, cos
+# except:  # For Python 2 compatibility
+#     from math import pi, fabs, cos, sqrt
+#
+#     TWO_PI = 2.0 * pi
+#
+#     def dist(p, q):
+#         return sqrt(sum((p_i - q_i) ** 2.0 for p_i, q_i in zip(p, q)))
 
 # imports done =============================================================================================
 
@@ -95,7 +95,7 @@ def all_close(goal, actual, tolerance):
 class MoveGroupInterface(object): 
     "MoveGroupInterface"
 
-    def __init__(self):
+    def __init__(self, planning_group_name):
         super(MoveGroupInterface, self).__init__()
 
         # Setup markerArray (for visualization of poses)
@@ -117,10 +117,10 @@ class MoveGroupInterface(object):
         scene = moveit_commander.PlanningSceneInterface()
 
         # Query planning group from user
-        target_planning_group_name = "monkey_left_arm" # Or input("Please specify planning group: ")
+        # target_planning_group_name = "monkey_left_arm" # Or input("Please specify planning group: ")
         
         # Setup move_group handle
-        move_group = moveit_commander.MoveGroupCommander(target_planning_group_name)
+        move_group = moveit_commander.MoveGroupCommander(planning_group_name)
         move_group.set_planning_time(5.0) # This sets a time limit for the planning of trajectories
         move_group.set_max_velocity_scaling_factor(1.0) # Scaler for execution of trajectories
         move_group.set_max_acceleration_scaling_factor(1.0)
@@ -310,68 +310,26 @@ class MoveGroupInterface(object):
 # - Saving, loading and editing of T
 # This helper class could be integrated into the moveGroupInterface, this would however decrease code readability.
 class Utils:
-    def __init__(self,_interface) -> None:
-        # A handle to the moveGroupInteface is necessary for some actions. 
-        self.iface = _interface
+    def __init__(self, interface_left_arm, inteface_right_arm, interface_head) -> None:
+        # A handle to the moveGroupInteface is necessary for some actions.
+        self.ifaceLA = interface_left_arm
+        self.ifaceRA = inteface_right_arm
+        self.ifaceH = interface_head
 
     # Let user collect an arbitrary number of waypoints in gui, return the collected waypoints
-    def collect_wpoints_in_gui(self,initial_wp_count):
-        wcounter = initial_wp_count # For the shell interaction a waypoint counter is needed. An initial_count != 0 means that we will append new poses to a poseArray loaded form a json file
-        wp_collecting_intent_status = " "         
-        wp_ns = "collected_waypoint"
-        col_poses = PoseArray() # Create empty poseArray
-        # If initial_wp_count is greater 1 this means we are not populating an empty poseArray, but instead appending new poses to an existing poseArray
-        if initial_wp_count > 1:
-            self.appending = True 
-            col_poses = self.iface.loaded_json_wpoints
-            wp_ns = "appended_waypoints"
-        # Collect as many poses as the user wants
-        while wp_collecting_intent_status != "no": 
-            wpoint_valid = False
-            # Try to get a valid wpoint
-            while not wpoint_valid:
-                print("Move EEF to waypoint ",wcounter)
-                input("To save waypoint press [Enter]")
-                # Get the last recorded pose of the interactive marker
-                if self.iface.last_rec_im_pose:
-                    w = self.iface.last_rec_im_pose 
-                else:
-                    print("No IM pose has been recorded yet. Have you moved the IM?")
-                    return None
-
-                # Check if this pose is valid 
-                wpoint_valid = self.iface.isValid(w)
-                if wpoint_valid:
-                    break
-                else:
-                    try_again_dec =input("Invalid waypoint (outside robot range). Do you want to try again? [Enter | no]")
-                    if try_again_dec != "":
-                        return None
-
-
-            col_poses.poses.append(w)
-            # Append collected wpoint to wpoints stored in iface
-            self.iface.wpoints.append(w)
-            # Create marker for this waypoint
-            self.iface.createMarker(w,wp_ns)
-            wcounter += 1
-            # Publish markers
-            self.iface.markerArrayPub.publish(self.iface.markerArray)
-            # Query continuation of waypoint collection
-            wp_collecting_intent_status = input("Do you want to add another waypoint? [ Enter | no]")
-        
-        return col_poses
 
     def collect_wpoints_in_gui_genti(self, initial_wp_count):
         wcounter = initial_wp_count  # For the shell interaction a waypoint counter is needed. An initial_count != 0 means that we will append new poses to a poseArray loaded form a json file
         wp_collecting_intent_status = ""
         wp_ns = "collected_waypoint"
-        col_poses = PoseArray()  # Create empty poseArray
+        col_posesLA = PoseArray()  # Create empty poseArray
+        col_posesRA = PoseArray()
+        col_posesH = PoseArray()
         # If initial_wp_count is greater 1 this means we are not populating an empty poseArray, but instead appending new poses to an existing poseArray
-        if initial_wp_count > 1:
-            self.appending = True
-            col_poses = self.iface.loaded_json_wpoints
-            wp_ns = "appended_waypoints"
+        # if initial_wp_count > 1:
+        #     self.appending = True
+        #     col_poses = self.iface.loaded_json_wpoints
+        #     wp_ns = "appended_waypoints"
         # Collect as many poses as the user wants
         while wp_collecting_intent_status == "":
             wpoint_valid = False
@@ -380,20 +338,27 @@ class Utils:
                 print("Move EEF to waypoint ", wcounter)
                 input("To save waypoint press [Enter]")
                 # Get the last recorded pose of the interactive marker
-                if self.iface.last_rec_im_pose:
-                    w = self.iface.last_rec_im_pose
-                else:
-                    print("No IM pose has been recorded yet. Have you moved the IM?")
-                    continue
+                # if self.iface.last_rec_im_pose:
+                wLA = self.ifaceLA.last_rec_im_pose
+                wRA = self.ifaceRA.last_rec_im_pose
+                wH = self.ifaceH.last_rec_im_pose
+                # else:
+                #     print("No IM pose has been recorded yet. Have you moved the IM?")
+                #     continue
 
                 # Check if this pose is valid
-                wpoint_valid = self.iface.isValid(w)
-                if wpoint_valid:
+                # wpoint_valid = self.iface.isValid(w)
+                if self.ifaceLA.isValid(wLA) and self.ifaceRA.isValid(wRA) and self.ifaceH.isValid(wH):
                     eef_step_size = 10 # 1m -> no interpolation, cartesian path will have as many points as pose vector in iface
                     # Plan a path
-                    (plan, suc_frac) = self.iface.move_group.compute_cartesian_path(col_poses.poses + [w], float(eef_step_size),
-                                                                                 0.0)  # last argument: jump_threshold -> not used
-                    if suc_frac == 1.0:
+                    (planLA, suc_fracLA) = self.ifaceLA.move_group.compute_cartesian_path(col_posesLA.poses + [wLA], float(eef_step_size),
+                                                                                 0.0)
+                    (planRA, suc_fracRA) = self.ifaceRA.move_group.compute_cartesian_path(col_posesRA.poses + [wRA], float(eef_step_size),
+                                                                                    0.0)
+                    (planH, suc_fracH) = self.ifaceH.move_group.compute_cartesian_path(col_posesH.poses + [wH], float(eef_step_size),
+                                                                                    0.0)
+
+                    if suc_fracLA == 1.0 and suc_fracRA == 1.0 and suc_fracH == 1.0:
                         break
                     else:
                         try_again_dec = input(
@@ -406,20 +371,30 @@ class Utils:
                     if try_again_dec != "":
                         return None
 
-            col_poses.poses.append(w)
+            col_posesLA.poses.append(wLA)
+            col_posesRA.poses.append(wRA)
+            col_posesH.poses.append(wH)
             # Append collected wpoint to wpoints stored in iface
-            self.iface.wpoints.append(w)
+            self.ifaceLA.wpoints.append(wLA)
+            self.ifaceRA.wpoints.append(wRA)
+            self.ifaceH.wpoints.append(wH)
             # Create marker for this waypoint
-            self.iface.createMarker(w, wp_ns)
+
+            self.ifaceLA.createMarker(wLA, wp_ns)
+            self.ifaceRA.createMarker(wRA, wp_ns)
+            self.ifaceH.createMarker(wH, wp_ns)
+
             wcounter += 1
             # Publish markers
-            self.iface.markerArrayPub.publish(self.iface.markerArray)
+            self.ifaceLA.markerArrayPub.publish(self.ifaceLA.markerArray)
+            self.ifaceRA.markerArrayPub.publish(self.ifaceRA.markerArray)
+            self.ifaceH.markerArrayPub.publish(self.ifaceH.markerArray)
             # Query continuation of waypoint collection
             wp_collecting_intent_status = input("Do you want to add another waypoint? [ Enter | no]")
 
-        return col_poses
+        return col_posesLA, col_posesRA, col_posesH
     # Query saving of poseArray from user, if desired query name of json file to save poseArray to. The file name without .json
-    def querySave(self,pa):       
+    def querySave(self,pa):
         # Query saving from user
         ans = input("Do you want to save these waypoints? [yes | Enter]")
         if ans != "":
@@ -427,13 +402,13 @@ class Utils:
             desired_filename = input("Please specify an (unused) filename without file type: ")
             # Consctruct path name
             path_to_current_dir = str(pathlib.Path().resolve()) # The path gets saved in the moveit workspace top folder
-            path_name = path_to_current_dir + "/" + desired_filename + '.json' 
+            path_name = path_to_current_dir + "/" + desired_filename + '.json'
             # Convert json poseArray to json
             json_pose_array = json_message_converter.convert_ros_message_to_json(pa)
             # Dump json data into json file
             with open(path_name, 'w+') as f:
                 json.dump(json_pose_array, f)
-    
+
     # Create three hardcoded waypoints
     def pdExampleWaypoints(self):
         # Create waypoints based on current pose of end effector
@@ -460,7 +435,7 @@ class Utils:
         self.iface.markerArrayPub.publish(self.iface.markerArray)
         # Query execution
         self.queryCPP(pa)
-        
+
     # Plan to a hardcoded pose goal, display the plan and query its execution
     def pdExamplePoseGoal(self):
         # Get default pose of current end effector
@@ -481,79 +456,84 @@ class Utils:
             self.iface.go_to_pose_goal(pose_goal)
 
     # Query if user wants to plan to a cartesian path. If so, plan it. Then, query for execution. If planning failed, exit.
-    def queryCPP(self,col_pa):
+    def queryCPP(self,col_paLA, col_paRA, col_paH):
         # Query planning of cartesian path
         execute_cart_path_goal_dec = input("Do you want to plan a cart. path from the waypoints? [Enter for yes, any key for no]\n")
         if execute_cart_path_goal_dec == "":
-            eef_step_size = 1.0 # 1m -> no interpolation, cartesian path will have as many points as pose vector in iface 
+            eef_step_size = 1.0 # 1m -> no interpolation, cartesian path will have as many points as pose vector in iface
             # Plan a path
-            (plan, suc_frac) = self.iface.move_group.compute_cartesian_path(col_pa.poses, float(eef_step_size), 0.0) # last argument: jump_threshold -> not used
+            (planLA, suc_fracLA) = self.ifaceLA.move_group.compute_cartesian_path(col_paLA.poses, float(eef_step_size), 0.0) # last argument: jump_threshold -> not used
+            (planRA, suc_fracRA) = self.ifaceRA.move_group.compute_cartesian_path(col_paRA.poses, float(eef_step_size), 0.0) # last argument: jump_threshold -> not used
+            (planH, suc_fracH) = self.ifaceH.move_group.compute_cartesian_path(col_paH.poses, float(eef_step_size), 0.0) # last argument: jump_threshold -> not used
             # Inform user of success fraction
-            print("Sucess fraction: ",suc_frac)
-            if suc_frac == 1.0:
+            print(f"Sucess fraction LA: {suc_fracLA}, RA: {suc_fracRA}, H: {suc_fracH}")
+            if suc_fracLA == 1.0 and suc_fracRA == 1.0 and suc_fracH == 1.0:
                 # Display the plan
                 display_trajectory = moveit_msgs.msg.DisplayTrajectory()
-                display_trajectory.trajectory_start = self.iface.robot.get_current_state()
-                display_trajectory.trajectory.append(plan)
+                display_trajectory.trajectory_start = self.ifaceLA.robot.get_current_state()
+                display_trajectory.trajectory.append(planLA)
+                print(planLA)
+                print('\n\n\n-------------------\n\n\n')
+                print(planRA)
                 # Publish the plan
-                self.iface.display_trajectory_publisher.publish(display_trajectory)
+                self.ifaceLA.display_trajectory_publisher.publish(display_trajectory)
                 # Query decision to execute cart. plan
                 exec_dec = input("Do you want to execute the cart. plan? [Enter for yes, any key for no]")
                 if exec_dec == "":
-                    self.iface.move_group.execute(plan, wait=True) # Waits until feedback from execution is received
+                    self.ifaceLA.move_group.execute(planLA, wait=True)  # Waits until feedback from execution is received
                 # Query save
-                self.querySave(col_pa)
+                # self.querySave(col_pa)
             else:
-                print("Planning failed")            
+                print("Planning failed")
 
     # Query the user for the name of json file containing a poseArray, then query saving of cart. path, then query execution of cart. path
-    def loadWaypointsFromJSON(self):
-        file_name = input("Please input name of json file to load: ")
-        path_to_current_dir = str(pathlib.Path().resolve()) # The path gets loaded from the moveit workspace top folder
-        path_name = path_to_current_dir + "/" + file_name + '.json' 
-        with open(path_name, 'rb') as f:
-                self.appending = True
-                # Get poseArray data from json object
-                jsonOjbect = json.load(f)
-                loaded_pose_array = json_message_converter.convert_json_to_ros_message('geometry_msgs/PoseArray', jsonOjbect) 
-                # Save loaded poseArray in interface
-                self.iface.loaded_json_wpoints = loaded_pose_array 
-                # Create marker for all poses in poseArray
-                for pose in loaded_pose_array.poses:
-                    self.iface.createMarker(pose,'loaded_wpoint')
-                self.iface.markerArrayPub.publish(self.iface.markerArray)
-                print("Waypoints were loaded and are being displayed")
-                # Query if user wishes to continue
-                cont_ans = input("Do you wish to continue? [Enter for yes, any key for no]")
-                if cont_ans == "":
-                    # Query adding of new waypoints
-                    question = "Do you want to add new waypoints to the file "+file_name+" ? [Enter for yes, any key for no]"
-                    edit_ans = input(question)
-                    if edit_ans == "":
-                        # If no waypoints are loaded, inform user and exit
-                        if self.iface.loaded_json_wpoints == None:
-                            print("No waypoints were loaded!")
-                        else:
-                            # If a poseArray was loaded, give these waypoints to the collect_wpoints_in_gui method, 
-                            # which will append new waypoints and return a poseArray with all old poses + all new poses
-                            existing_wpoints = self.iface.loaded_json_wpoints
-                            # The coutner counting the existing waypoints in the waypoints array is incremented by one, 
-                            #since the counter refers to the index refers to the next waypoint to be added
-                            n = len(existing_wpoints.poses) + 1
-                            extended_waypoints = self.collect_wpoints_in_gui(n)
-                            if extended_waypoints:
-                                # Query saving of waypoints
-                                self.querySave(extended_waypoints)
-                                # Query decision to plan car. path
-                                self.queryCPP(extended_waypoints)
-                            else:
-                                print("No wpoints addded.")
-                                return None
-                    else:
-                        # Query decision to plan car. path
-                        self.queryCPP(loaded_pose_array)
+    # def loadWaypointsFromJSON(self):
+    #     file_name = input("Please input name of json file to load: ")
+    #     path_to_current_dir = str(pathlib.Path().resolve()) # The path gets loaded from the moveit workspace top folder
+    #     path_name = path_to_current_dir + "/" + file_name + '.json'
+    #     with open(path_name, 'rb') as f:
+    #             self.appending = True
+    #             # Get poseArray data from json object
+    #             jsonOjbect = json.load(f)
+    #             loaded_pose_array = json_message_converter.convert_json_to_ros_message('geometry_msgs/PoseArray', jsonOjbect)
+    #             # Save loaded poseArray in interface
+    #             self.iface.loaded_json_wpoints = loaded_pose_array
+    #             # Create marker for all poses in poseArray
+    #             for pose in loaded_pose_array.poses:
+    #                 self.iface.createMarker(pose,'loaded_wpoint')
+    #             self.iface.markerArrayPub.publish(self.iface.markerArray)
+    #             print("Waypoints were loaded and are being displayed")
+    #             # Query if user wishes to continue
+    #             cont_ans = input("Do you wish to continue? [Enter for yes, any key for no]")
+    #             if cont_ans == "":
+    #                 # Query adding of new waypoints
+    #                 question = "Do you want to add new waypoints to the file "+file_name+" ? [Enter for yes, any key for no]"
+    #                 edit_ans = input(question)
+    #                 if edit_ans == "":
+    #                     # If no waypoints are loaded, inform user and exit
+    #                     if self.iface.loaded_json_wpoints == None:
+    #                         print("No waypoints were loaded!")
+    #                     else:
+    #                         # If a poseArray was loaded, give these waypoints to the collect_wpoints_in_gui method,
+    #                         # which will append new waypoints and return a poseArray with all old poses + all new poses
+    #                         existing_wpoints = self.iface.loaded_json_wpoints
+    #                         # The coutner counting the existing waypoints in the waypoints array is incremented by one,
+    #                         #since the counter refers to the index refers to the next waypoint to be added
+    #                         n = len(existing_wpoints.poses) + 1
+    #                         extended_waypoints = self.collect_wpoints_in_gui(n)
+    #                         if extended_waypoints:
+    #                             # Query saving of waypoints
+    #                             self.querySave(extended_waypoints)
+    #                             # Query decision to plan car. path
+    #                             self.queryCPP(extended_waypoints)
+    #                         else:
+    #                             print("No wpoints addded.")
+    #                             return None
+    #                 else:
+    #                     # Query decision to plan car. path
+    #                     self.queryCPP(loaded_pose_array)
 
-    # Query a valid 'mode' from the user, where mode is one of the scripts functionalities: 
+    # Query a valid 'mode' from the user, where mode is one of the scripts functionalities:
     # {single pose goal, hardcoded trajectory,  collecting waypoints,loading and editing waypoints, exit}
     def queryValidMode(self):
         print("")
@@ -580,7 +560,7 @@ class Utils:
 
     # Clear terminal and greet user
     def greet(self):
-        os.system('clear') # Clear terminal 
+        os.system('clear') # Clear terminal
         print("")
         print("----------------------------------------------------------")
         print("Monkey Interface")
@@ -591,10 +571,12 @@ class Utils:
 def main():
     try:
         # Create interface to Moveit:RobotCommander (move-group python interface)   
-        interface = MoveGroupInterface()
+        interface_left_arm = MoveGroupInterface('monkey_left_arm')
+        interface_right_arm = MoveGroupInterface('monkey_right_arm')
+        interface_head = MoveGroupInterface('head')
 
         # Create helper class
-        helper = Utils(interface)
+        helper = Utils(interface_left_arm, interface_right_arm, interface_head)
 
         # Greet user
         helper.greet()
@@ -604,7 +586,7 @@ def main():
 
         if mode == 1: # Plan display execute hard coded pose goal
             # Plan and display trajectory to hard coded pose goal, query user for execution
-            helper.pdExamplePoseGoal() 
+            helper.pdExamplePoseGoal()
         elif mode == 2: # Plan display hard coded trajectory, query for execution
             # Plan and display trajectory based on hardcoded waypoints
             helper.pdExampleWaypoints()
@@ -612,16 +594,18 @@ def main():
         elif mode == 3: # Let user collect waypoints in gui, query save and finally query execution
 
             # Collect waypoints in gui
-            collected_pose_array = helper.collect_wpoints_in_gui_genti(1)
-            if collected_pose_array:
-                # Ask user if he wants to save
-                helper.querySave(collected_pose_array)
-                    
-                # Make sure that all user set waypoints are being displayed
-                interface.markerArrayPub.publish(interface.markerArray)
+            collected_pose_arrayLA, collected_pose_arrayRA, collected_pose_arrayH = helper.collect_wpoints_in_gui_genti(1)
+        # if collected_pose_array:
+            # Ask user if he wants to save
+            # helper.querySave(collected_pose_array)
+            #
+            # Make sure that all user set waypoints are being displayed
+            interface_left_arm.markerArrayPub.publish(interface_left_arm.markerArray)
+            interface_right_arm.markerArrayPub.publish(interface_right_arm.markerArray)
+            interface_head.markerArrayPub.publish(interface_head.markerArray)
 
-                # Query decision to plan car. path
-                helper.queryCPP(collected_pose_array)
+            # Query decision to plan car. path
+            helper.queryCPP(collected_pose_arrayLA, collected_pose_arrayRA, collected_pose_arrayH)
             
         elif mode == 4: # Load waypoints from json, potentially edit them
 
