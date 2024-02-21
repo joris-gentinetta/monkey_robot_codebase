@@ -68,25 +68,6 @@ class Joint:
         self.angMax = angmax
         self.invert = invert
 
-    # Set joint servo to one of 4 pre defined states {0,0.5,1,def}
-    def setState(self, _target_state):
-        # Value to be written to servo
-        next_val = 0
-        if (_target_state == "def"):
-            next_val = self.default_val
-        elif (_target_state == "0"):
-            next_val = self.min_val
-        elif (_target_state == "0.5"):
-            self.servo.angle = self.default_val
-        elif (_target_state == "1"):
-            next_val = self.max_val
-        else:
-            rospy.loginfo("Unknown target state")
-            return
-        # Log which value was set to which motor
-        rospy.loginfo("Setting %s to [itp %s]", self.name, next_val)
-        # Write value to motor
-        self.servo.angle = next_val
 
     # Set joint servo to a value in [-1,1].
     # The input target_val is mapped to [-1,1], where the mapping also depends on the attachment of the threads to the servo.
@@ -106,19 +87,6 @@ class Joint:
             target_val = '%.3f' % target_val
             # target_val_deg = int(math.degrees(target_val))
             rospy.loginfo("Setting %s to [%s radians] -> [itp %s] ", self.name, target_val, intp_val)
-
-    # # Sweep through predefined states
-    # def sweep(self):
-    #     delay = 1.0
-    #     self.setState("0")
-    #     rospy.sleep(delay)
-    #     self.setState("0.5")
-    #     rospy.sleep(delay)
-    #     self.setState("1")
-    #     rospy.sleep(delay)
-    #     self.setState("def")
-    #     rospy.sleep(delay)
-
 
 # Joint class done =========================================================================================
 
@@ -146,10 +114,10 @@ class Body:
         # Right arm
         self.joints["RH"] = Joint("RH",9, default_val=170, angmin=-1.4, angmax=1.4, min_val=165, max_val=170)
         self.joints["RW"] = Joint("RW", 8, angmin=-1.4, angmax=1.4, min_val=10, max_val=180)
-        self.joints["REB"] = Joint("REB", 7, angmin=0, angmax=1.4, min_val=90, max_val=170)
+        self.joints["REB"] = Joint("REB", 7, angmin=0, angmax=1.4, min_val=90, max_val=170, invert=True)
         self.joints["RSH"] = Joint("RSH", 10, angmin=-1.6, angmax=1.2, min_val=10, max_val=170)
-        self.joints["RSL"] = Joint("RSL", 6, angmin=-1.4, angmax=1.4, min_val=10, max_val=180)
-        self.joints["RSF"] = Joint("RSF", 11, angmin=-2.186, angmax=0.615, min_val=10, max_val=180)
+        self.joints["RSL"] = Joint("RSL", 6, angmin=-1.4, angmax=1.4, min_val=10, max_val=180, invert=True)
+        self.joints["RSF"] = Joint("RSF", 11, angmin=-2.186, angmax=0.615, min_val=10, max_val=180, invert=True)
 
         # Head
         self.joints["NH"] = Joint("NF", 12, angmin=-1.4, angmax=1.4, min_val=10, max_val=180)
@@ -158,18 +126,18 @@ class Body:
     # Set all servos to default position
     def allToDef(self):
         for k, j in self.joints.items():
-            j.setState("def")
+            j.angle = j.default_val
+            rospy.loginfo("Setting %s to [itp %s]", self.name, j.default_val)
         rospy.sleep(1.0)
 
     # Update joints according to incoming joint target joint states
     def updateJoints(self):
         # This list contains all active joints. If a joint name is removed, it will not get updated. Note that LSH/RSH are currently not contained
-        working_joints = ["NF", "NH", "LSF", "LSL", "LEB", "RSF", "RSL", "REB"]
+        # working_joints = ["NF", "NH", "LSF", "LSL", "LEB", "RSF", "RSL", "REB"]
         for joint_name, target_value in target_joint_positions.items():
             J = self.joints[joint_name]
-            if J.name in working_joints:
-                J.set_to_itp_val(target_value)
-
+            # if J.name in working_joints:
+            J.set_to_itp_val(target_value)
 
 # Body class done ================================================================================================
 
