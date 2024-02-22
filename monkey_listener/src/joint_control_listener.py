@@ -84,13 +84,14 @@ class Joint:
         time1 = time.time()
         self.servo.angle = float(intp_val)
         time2 = time.time()
-        print("Time to write to servo: ", time2-time1)
         if abs(prev_val - intp_val) > 0.1:
             # Log interpolated value and original target value
             intp_val = '%.2f' % intp_val
             target_val = '%.3f' % target_val
             # target_val_deg = int(math.degrees(target_val))
             rospy.loginfo("Setting %s to [%s radians] -> [itp %s] ", self.name, target_val, intp_val)
+            print("Time to write to servo: ", time2 - time1)
+
 
 # Joint class done =========================================================================================
 
@@ -136,6 +137,7 @@ class Body:
 
     # Update joints according to incoming joint target joint states
     def updateJoints(self):
+        time_update = time.time()
         # This list contains all active joints. If a joint name is removed, it will not get updated. Note that LSH/RSH are currently not contained
         selected_joints = ["LSL"]
         for joint_name, target_value in target_joint_positions.items():
@@ -143,6 +145,9 @@ class Body:
                 J = self.joints[joint_name]
                 # if J.name in working_joints:
                 J.set_to_itp_val(target_value)
+        time_update2 = time.time()
+        print("Time to update all joints: ", time_update2 - time_update)
+
 
 # Body class done ================================================================================================
 
@@ -151,6 +156,7 @@ class Body:
 
 # Callback function which is executed when the joint-state listener receives new data
 def callback(JointState):
+    time_callback = time.time()
     # Copy incoming joint state target data into storage variable
     target_joint_positions["NH"] = JointState.position[0]
     target_joint_positions["NF"] = JointState.position[1]
@@ -169,7 +175,8 @@ def callback(JointState):
 
     # Update joints according to target joint states
     body.updateJoints()
-
+    time_callback_2 = time.time()
+    print('time to callback: ', time_callback_2-time_callback)
 
 if __name__ == '__main__':
     # Init node
