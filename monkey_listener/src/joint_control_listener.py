@@ -133,11 +133,12 @@ class Body:
     # Update joints according to incoming joint target joint states
     def updateJoints(self):
         # This list contains all active joints. If a joint name is removed, it will not get updated. Note that LSH/RSH are currently not contained
-        # working_joints = ["NF", "NH", "LSF", "LSL", "LEB", "RSF", "RSL", "REB"]
+        selected_joints = ["LSL"]
         for joint_name, target_value in target_joint_positions.items():
-            J = self.joints[joint_name]
-            # if J.name in working_joints:
-            J.set_to_itp_val(target_value)
+            if joint_name in selected_joints:
+                J = self.joints[joint_name]
+                # if J.name in working_joints:
+                J.set_to_itp_val(target_value)
 
 # Body class done ================================================================================================
 
