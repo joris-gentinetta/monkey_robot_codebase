@@ -560,10 +560,10 @@ class Utils:
     def loadWaypointsFromJSON(self):
         path_to_current_dir = str(pathlib.Path().resolve()) # The path gets loaded from the moveit workspace top folder
         saved_files = os.listdir(path_to_current_dir + "/saved_waypoints")
-        saved_files = [f[:-7] for f in saved_files]
+        saved_files = [f[:-8] for f in saved_files]
         print("Please input name of json file to load. Options: ", saved_files)
         file_name = input()
-        while file_name+'_LA.json' not in saved_files:
+        while file_name not in saved_files:
             print("File does not exist, try again. Options: ", saved_files)
             file_name = input()
 
