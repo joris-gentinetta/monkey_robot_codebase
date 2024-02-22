@@ -204,8 +204,8 @@ if __name__ == '__main__':
     if SMOOTH:
         time.sleep(60)
         for i in range(len(body.joints['LH'].trajectory)):
-            for joint in body.joints:
-                joint.angle = body.joints[joint].trajectory[i]
+            for key, joint in body.joints:
+                joint.angle = joint.trajectory[i]
 
     rospy.spin()
 
