@@ -204,6 +204,7 @@ if __name__ == '__main__':
     if SMOOTH:
         time.sleep(60)
         for i in range(len(body.joints['LH'].trajectory)):
+            time.sleep(0.1)
             for joint in body.joints.values():
                 joint.servo.angle = joint.trajectory[i]
 
