@@ -54,7 +54,7 @@ except:  # For Python 2 compatibility
 
     def dist(p, q):
         return sqrt(sum((p_i - q_i) ** 2.0 for p_i, q_i in zip(p, q)))
-
+EEF_STEP_SIZE = 0.01
 # imports done =============================================================================================
 
 # Convenience functions ====================================================================================
@@ -195,19 +195,19 @@ class MoveGroupInterface(object):
         #print("len markers after callback body: ",len(self.markerArray.markers))
 
     # Set joint goal for eef of move_group, execute trajectory, check if target and final pose of eef are within tolerance [Adapter from tutorial]
-    def go_to_joint_goal(self):
-        # Instantiate joint_state object
-        joint_goal = self.move_group.get_current_joint_values()
-        # Set joint states manually. ATTENTION: Must be in accordance to joint limits in URDF, otherwise an error will occur
-        joint_goal[0] = 0 
-        joint_goal[1] = 0 
-        # Go to joint go state
-        self.move_group.go(joint_goal, wait=True)
-        # Calling ``stop()`` ensures that there is no residual movement
-        self.move_group.stop() 
-        # Check if current and target joint state are within tolerance
-        current_joints = self.move_group.get_current_joint_values()
-        return all_close(joint_goal, current_joints, 0.01)
+    # def go_to_joint_goal(self):
+    #     # Instantiate joint_state object
+    #     joint_goal = self.move_group.get_current_joint_values()
+    #     # Set joint states manually. ATTENTION: Must be in accordance to joint limits in URDF, otherwise an error will occur
+    #     joint_goal[0] = 0
+    #     joint_goal[1] = 0
+    #     # Go to joint go state
+    #     self.move_group.go(joint_goal, wait=True)
+    #     # Calling ``stop()`` ensures that there is no residual movement
+    #     self.move_group.stop()
+    #     # Check if current and target joint state are within tolerance
+    #     current_joints = self.move_group.get_current_joint_values()
+    #     return all_close(joint_goal, current_joints, 0.01)
 
     # Create a (visual) marker for a pose 
     def createMarker(self,marker_pose,_ns):
@@ -271,20 +271,20 @@ class MoveGroupInterface(object):
             self.lrimp_count += 1
 
     # Set pose goal for eef of move_group, execute trajectory, check if target and final pose of eef are within tolerance [Adapter from tutorial]
-    def go_to_pose_goal(self,tpose):
-        # Extract target pose position
-        pos = tpose.position
-        pg_pos_arr = [pos.x,pos.y,pos.z]
-        # Set pose goal
-        self.move_group.set_position_target(pg_pos_arr,self.eef_link)
-        # Move to pose goal, save success status. `go()` returns a boolean indicating whether the planning and execution was successful.
-        success = self.move_group.go(wait=True) 
-        # Calling `stop()` ensures that there is no residual movement
-        self.move_group.stop() 
-        self.move_group.clear_pose_targets()
-        # For testing  tolerance
-        current_pose_check = self.move_group.get_current_pose().pose 
-        return all_close(tpose, current_pose_check, 0.01)
+    # def go_to_pose_goal(self,tpose):
+    #     # Extract target pose position
+    #     pos = tpose.position
+    #     pg_pos_arr = [pos.x,pos.y,pos.z]
+    #     # Set pose goal
+    #     self.move_group.set_position_target(pg_pos_arr,self.eef_link)
+    #     # Move to pose goal, save success status. `go()` returns a boolean indicating whether the planning and execution was successful.
+    #     success = self.move_group.go(wait=True)
+    #     # Calling `stop()` ensures that there is no residual movement
+    #     self.move_group.stop()
+    #     self.move_group.clear_pose_targets()
+    #     # For testing  tolerance
+    #     current_pose_check = self.move_group.get_current_pose().pose
+    #     return all_close(tpose, current_pose_check, 0.01)
 
     # Returns boolean indicating if there is valid trajectory from the eef def pos to a certain wpoint
     def isValid(self,wpoint):
@@ -344,9 +344,8 @@ class Utils:
                 print(wLA)
                 wpoint_valid = self.ifaceLA.isValid(wLA)
                 if wpoint_valid:
-                    eef_step_size = 10 # 1m -> no interpolation, cartesian path will have as many points as pose vector in iface
                     # Plan a path
-                    (planLA, suc_fracLA) = self.ifaceLA.move_group.compute_cartesian_path(col_posesLA.poses + [wLA], float(eef_step_size),
+                    (planLA, suc_fracLA) = self.ifaceLA.move_group.compute_cartesian_path(col_posesLA.poses + [wLA], float(EEF_STEP_SIZE),
                                                                                  0.0)
                     if suc_fracLA == 1.0:
                         break
@@ -371,9 +370,8 @@ class Utils:
                 print(wRA)
                 wpoint_valid = self.ifaceRA.isValid(wRA)
                 if wpoint_valid:
-                    eef_step_size = 10 # 1m -> no interpolation, cartesian path will have as many points as pose vector in iface
                     # Plan a path
-                    (planRA, suc_fracRA) = self.ifaceRA.move_group.compute_cartesian_path(col_posesRA.poses + [wRA], float(eef_step_size),
+                    (planRA, suc_fracRA) = self.ifaceRA.move_group.compute_cartesian_path(col_posesRA.poses + [wRA], float(EEF_STEP_SIZE),
                                                                                  0.0)
                     if suc_fracRA == 1.0:
                         break
@@ -398,10 +396,9 @@ class Utils:
             #     print(wH)
             #     wpoint_valid = self.ifaceH.isValid(wH)
             #     if wpoint_valid:
-            #         eef_step_size = 10  # 1m -> no interpolation, cartesian path will have as many points as pose vector in iface
             #         # Plan a path
             #         (planH, suc_fracH) = self.ifaceH.move_group.compute_cartesian_path(col_posesH.poses + [wH],
-            #                                                                               float(eef_step_size),
+            #                                                                               float(EEF_STEP_SIZE),
             #                                                                               0.0)
             #         if suc_fracH == 1.0:
             #             break
@@ -512,11 +509,10 @@ class Utils:
         # Query planning of cartesian path
         execute_cart_path_goal_dec = input("Do you want to plan a cart. path from the waypoints? [Enter for yes, any key for no]\n")
         if execute_cart_path_goal_dec == "":
-            eef_step_size = 1.0 # 1m -> no interpolation, cartesian path will have as many points as pose vector in iface
             # Plan a path
-            (planLA, suc_fracLA) = self.ifaceLA.move_group.compute_cartesian_path(col_paLA.poses, float(eef_step_size), 0.0) # last argument: jump_threshold -> not used
-            (planRA, suc_fracRA) = self.ifaceRA.move_group.compute_cartesian_path(col_paRA.poses, float(eef_step_size), 0.0) # last argument: jump_threshold -> not used
-            # (planH, suc_fracH) = self.ifaceH.move_group.compute_cartesian_path(col_paH.poses, float(eef_step_size), 0.0) # last argument: jump_threshold -> not used
+            (planLA, suc_fracLA) = self.ifaceLA.move_group.compute_cartesian_path(col_paLA.poses, float(EEF_STEP_SIZE), 0.0) # last argument: jump_threshold -> not used
+            (planRA, suc_fracRA) = self.ifaceRA.move_group.compute_cartesian_path(col_paRA.poses, float(EEF_STEP_SIZE), 0.0) # last argument: jump_threshold -> not used
+            # (planH, suc_fracH) = self.ifaceH.move_group.compute_cartesian_path(col_paH.poses, float(EEF_STEP_SIZE), 0.0) # last argument: jump_threshold -> not used
             # Inform user of success fraction
             print(f"Success fraction LA: {suc_fracLA}, RA: {suc_fracRA}") #, H: {suc_fracH}")
             if suc_fracLA == 1.0 and suc_fracRA == 1.0: # and suc_fracH == 1.0:
