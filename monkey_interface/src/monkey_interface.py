@@ -326,10 +326,11 @@ class Utils:
         col_posesRA = PoseArray()
         # col_posesH = PoseArray()
         # If initial_wp_count is greater 1 this means we are not populating an empty poseArray, but instead appending new poses to an existing poseArray
-        # if initial_wp_count > 1:
-        #     self.appending = True
-        #     col_poses = self.iface.loaded_json_wpoints
-        #     wp_ns = "appended_waypoints"
+        if initial_wp_count > 1:
+            self.appending = True
+            col_posesLA = self.ifaceLA.loaded_json_wpoints
+            col_posesRA = self.ifaceRA.loaded_json_wpoints
+            wp_ns = "appended_waypoints"
         # Collect as many poses as the user wants
         while wp_collecting_intent_status == "":
             wpoint_valid = False
@@ -565,18 +566,18 @@ class Utils:
         with open(path_nameLA, 'rb') as f:
             # Get poseArray data from json object
             jsonOjbect = json.load(f)
-            loaded_pose_array = json_message_converter.convert_json_to_ros_message('geometry_msgs/PoseArray', jsonOjbect)
+            col_posesLA = json_message_converter.convert_json_to_ros_message('geometry_msgs/PoseArray', jsonOjbect)
             # Save loaded poseArray in interface
-            self.ifaceLA.loaded_json_wpoints = loaded_pose_array
+            self.ifaceLA.loaded_json_wpoints = col_posesLA
             # Create marker for all poses in poseArray
-            for pose in loaded_pose_array.poses:
+            for pose in col_posesLA.poses:
                 self.ifaceLA.createMarker(pose,'loaded_wpoint')
             self.ifaceLA.markerArrayPub.publish(self.ifaceLA.markerArray)
         with open(path_nameRA, 'rb') as f:
             jsonOjbect = json.load(f)
-            loaded_pose_array = json_message_converter.convert_json_to_ros_message('geometry_msgs/PoseArray', jsonOjbect)
-            self.ifaceRA.loaded_json_wpoints = loaded_pose_array
-            for pose in loaded_pose_array.poses:
+            col_posesRA = json_message_converter.convert_json_to_ros_message('geometry_msgs/PoseArray', jsonOjbect)
+            self.ifaceRA.loaded_json_wpoints = col_posesRA
+            for pose in col_posesRA.poses:
                 self.ifaceRA.createMarker(pose,'loaded_wpoint')
             self.ifaceRA.markerArrayPub.publish(self.ifaceRA.markerArray)
         # with open(path_nameH, 'rb') as f:
@@ -609,7 +610,7 @@ class Utils:
                 print("No wpoints addded.")
 
         # Query decision to plan car. path
-        self.queryCPP(loaded_pose_array)
+        self.queryCPP(col_posesLA, col_posesRA) #, col_posesH)
 
     # Query a valid 'mode' from the user, where mode is one of the scripts functionalities:
     # {single pose goal, hardcoded trajectory,  collecting waypoints,loading and editing waypoints, exit}
