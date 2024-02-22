@@ -57,7 +57,7 @@
         <parent link="base_link" />
         <child link="Neck_Hor_Rot_Link" />
         <axis xyz="0 0 1" />
-        <limit lower="-1.4" upper="1.4" effort="1" velocity="5" />
+        <limit lower="-1.4" upper="1.4" effort="1" velocity="20" />
     </joint>
     <link name="Neck_Fro_Rot_Link">
         <inertial>
@@ -86,7 +86,7 @@
         <parent link="Neck_Hor_Rot_Link" />
         <child link="Neck_Fro_Rot_Link" />
         <axis xyz="1 0 0" />
-        <limit lower="-1.4" upper="1.4" effort="1" velocity="5" />
+        <limit lower="-1.4" upper="1.4" effort="1" velocity="20" />
     </joint>
     <link name="R_Shoulder_Link">
         <inertial>
@@ -115,7 +115,7 @@
         <parent link="base_link" />
         <child link="R_Shoulder_Link" />
         <axis xyz="1 0 0" />
-        <limit lower="-2.186" upper="0.615" effort="1" velocity="5" />
+        <limit lower="-2.186" upper="0.615" effort="1" velocity="20" />
     </joint>
     <link name="R_Upper_Biceps_Link">
         <inertial>
@@ -144,7 +144,7 @@
         <parent link="R_Shoulder_Link" />
         <child link="R_Upper_Biceps_Link" />
         <axis xyz="0 0 1" />
-        <limit lower="-1.4" upper="1.4" effort="1" velocity="5" />
+        <limit lower="-1.4" upper="1.4" effort="1" velocity="20" />
     </joint>
     <link name="R_Lower_Biceps_Link">
         <inertial>
@@ -173,7 +173,7 @@
         <parent link="R_Upper_Biceps_Link" />
         <child link="R_Lower_Biceps_Link" />
         <axis xyz="-1 0 0" />
-        <limit lower="-1.6" upper="1.2" effort="1" velocity="5" />
+        <limit lower="-1.6" upper="1.2" effort="1" velocity="20" />
     </joint>
     <link name="R_Upper_Forearm_Link">
         <inertial>
@@ -202,7 +202,7 @@
         <parent link="R_Lower_Biceps_Link" />
         <child link="R_Upper_Forearm_Link" />
         <axis xyz="0 0 1" />
-        <limit lower="0" upper="1.4" effort="1" velocity="5" />
+        <limit lower="0" upper="1.4" effort="1" velocity="20" />
     </joint>
     <link name="R_Lower_Forearm_Link">
         <inertial>
@@ -231,7 +231,7 @@
         <parent link="R_Upper_Forearm_Link" />
         <child link="R_Lower_Forearm_Link" />
         <axis xyz="-1 0 0" />
-        <limit lower="-1.4" upper="1.4" effort="1" velocity="5" />
+        <limit lower="-1.4" upper="1.4" effort="1" velocity="20" />
     </joint>
     <link name="R_Hand_Link">
         <inertial>
@@ -289,7 +289,7 @@
         <parent link="base_link" />
         <child link="L_Shoulder_Link" />
         <axis xyz="1 0 0" />
-        <limit lower="-2.186" upper="0.615" effort="1" velocity="5" />
+        <limit lower="-2.186" upper="0.615" effort="1" velocity="20" />
     </joint>
     <link name="L_Upper_Biceps_Link">
         <inertial>
@@ -318,7 +318,7 @@
         <parent link="L_Shoulder_Link" />
         <child link="L_Upper_Biceps_Link" />
         <axis xyz="0 0 1" />
-        <limit lower="-1.4" upper="1.4" effort="1" velocity="5" />
+        <limit lower="-1.4" upper="1.4" effort="1" velocity="20" />
     </joint>
     <link name="L_Lower_Biceps_Link">
         <inertial>
@@ -347,7 +347,7 @@
         <parent link="L_Upper_Biceps_Link" />
         <child link="L_Lower_Biceps_Link" />
         <axis xyz="1 0 0" />
-        <limit lower="-1.2" upper="1.6" effort="1" velocity="5" />
+        <limit lower="-1.2" upper="1.6" effort="1" velocity="20" />
     </joint>
     <link name="L_Upper_Forearm_Link">
         <inertial>
@@ -376,7 +376,7 @@
         <parent link="L_Lower_Biceps_Link" />
         <child link="L_Upper_Forearm_Link" />
         <axis xyz="0 0 1" />
-        <limit lower="-1.4" upper="0" effort="1" velocity="5" />
+        <limit lower="-1.4" upper="0" effort="1" velocity="20" />
     </joint>
     <link name="L_Lower_Forearm_Link">
         <inertial>
@@ -405,7 +405,7 @@
         <parent link="L_Upper_Forearm_Link" />
         <child link="L_Lower_Forearm_Link" />
         <axis xyz="1 0 0" />
-        <limit lower="-1.4" upper="1.4" effort="1" velocity="5" />
+        <limit lower="-1.4" upper="1.4" effort="1" velocity="20" />
     </joint>
     <link name="L_Hand_Link">
         <inertial>
