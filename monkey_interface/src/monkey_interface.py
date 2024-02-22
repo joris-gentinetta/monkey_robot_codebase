@@ -54,7 +54,7 @@ except:  # For Python 2 compatibility
 
     def dist(p, q):
         return sqrt(sum((p_i - q_i) ** 2.0 for p_i, q_i in zip(p, q)))
-EEF_STEP_SIZE = 0.01
+EEF_STEP_SIZE = 0.01 #TODO TEST
 # imports done =============================================================================================
 
 # Convenience functions ====================================================================================
@@ -365,7 +365,6 @@ class Utils:
                 print("Move right arm to wp ", wcounter)
                 input("To save waypoint press [Enter]")
                 # Get the last recorded pose of the interactive marker
-                # if self.iface.last_rec_im_pose:
                 wRA = self.ifaceRA.last_rec_im_pose
                 print(wRA)
                 wpoint_valid = self.ifaceRA.isValid(wRA)
@@ -527,6 +526,7 @@ class Utils:
                 exec_dec = input("Do you want to execute the cart. plan? [Enter for yes, any key for no]")
                 if exec_dec == "":
                     self.ifaceLA.move_group.execute(combined_plan, wait=True)  # Waits until feedback from execution is received
+                #TODO ASK TO SAVE FOR FASTER EXECUTION
             else:
                 print("Planning failed")
     def join_plans(self, planL, planR):
