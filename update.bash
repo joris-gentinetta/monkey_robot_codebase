@@ -1,5 +1,6 @@
 #git pull
 cp -r /home/robot-user/monkey_robot_codebase/monkey_interface/ /home/robot-user/ws_moveit/src/
+cp -r /home/robot-user/monkey_robot_codebase/monkey_complete/ /home/robot-user/ws_moveit/src/
 
 cd /home/robot-user/ws_moveit || exit
 catkin build monkey_interface
