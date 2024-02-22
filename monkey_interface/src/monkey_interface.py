@@ -449,8 +449,9 @@ class Utils:
             desired_filename = input("Please specify an (unused) filename without file type: ")
             # Consctruct path name
             path_to_current_dir = str(pathlib.Path().resolve()) # The path gets saved in the moveit workspace top folder
-            path_nameLA = path_to_current_dir + "/" + desired_filename + '_LA.json'
-            path_nameRA = path_to_current_dir + "/" + desired_filename + '_RA.json'
+            os.makedirs(path_to_current_dir + "/saved_waypoints", exist_ok=True)
+            path_nameLA = path_to_current_dir + "/saved_waypoints/" + desired_filename + '_LA.json'
+            path_nameRA = path_to_current_dir + "/saved_waypoints/" + desired_filename + '_RA.json'
             # Convert json poseArray to json
             json_pose_arrayLA = json_message_converter.convert_ros_message_to_json(paLA)
             json_pose_arrayRA = json_message_converter.convert_ros_message_to_json(paRA)
@@ -557,12 +558,19 @@ class Utils:
 
     # Query the user for the name of json file containing a poseArray, then query saving of cart. path, then query execution of cart. path
     def loadWaypointsFromJSON(self):
-        file_name = input("Please input name of json file to load: ")
         path_to_current_dir = str(pathlib.Path().resolve()) # The path gets loaded from the moveit workspace top folder
-        path_nameLA = path_to_current_dir + "/" + file_name + '_LA.json'
-        path_nameRA = path_to_current_dir + "/" + file_name + '_RA.json'
-        # path_nameH = path_to_current_dir + "/" + file_name + '_H.json'
+        saved_files = os.listdir(path_to_current_dir + "/saved_waypoints")
+        print("Please input name of json file to load. Options: ", saved_files)
+        file_name = input()
+        while file_name not in saved_files:
+            print("File does not exist, try again. Options: ", saved_files)
+            file_name = input()
+
+        path_nameLA = path_to_current_dir + "/saved_waypoints/" + file_name + '_LA.json'
+        path_nameRA = path_to_current_dir + "/saved_waypoints/" + file_name + '_RA.json'
+        # path_nameH = path_to_current_dir + "/saved_waypoints/" + file_name + '_H.json'
         self.appending = True
+
         with open(path_nameLA, 'rb') as f:
             # Get poseArray data from json object
             jsonOjbect = json.load(f)
@@ -702,8 +710,8 @@ def main():
         
     except rospy.ROSInterruptException:
         return
-    # except KeyboardInterrupt:
-    #     return
+    except KeyboardInterrupt:
+        return
 
 
 if __name__ == "__main__":
