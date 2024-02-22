@@ -54,4 +54,8 @@ if args.type == 'wear':
             sleep(0.5)
             kit.servo[s].angle = 90
 
+if args.type == 'single':
+    s = 6
+    for i in range(10, 170):
+        kit.servo[s].angle = i
 

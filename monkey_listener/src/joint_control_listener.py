@@ -49,7 +49,7 @@ import time
 # Class to store the duty cycles of the predefined states and who performs the mapping from duty cycle to [-1,1]
 class Joint:
 
-    def __init__(self, _name, _motor_pin, default_val=90, min_val=10, max_val=170, angmin=-1.571, angmax=1.571, invert=False) -> None:
+    def __init__(self, _name, _motor_pin, default_val=90, min_val=10, max_val=170, angmin=-1.571, angmax=1.571, invert=False, smooth=False) -> None:
         # Init name, motor pin
         self.name = _name
         self.motor_pin = _motor_pin
@@ -69,6 +69,9 @@ class Joint:
         self.angMax = angmax
         self.invert = invert
 
+        self.smooth = smooth
+        self.trajectory = []
+
 
     # Set joint servo to a value in [-1,1].
     # The input target_val is mapped to [-1,1], where the mapping also depends on the attachment of the threads to the servo.
@@ -78,19 +81,20 @@ class Joint:
         if self.invert:
             # Attachment inversion
             intp_val = 180 - intp_val
-
-        # Write interpolated value to servo
-        prev_val = self.servo.angle
-        time1 = time.time()
-        self.servo.angle = float(intp_val)
-        time2 = time.time()
-        if abs(prev_val - intp_val) > 0.1:
-            # Log interpolated value and original target value
-            intp_val = '%.2f' % intp_val
-            target_val = '%.3f' % target_val
-            # target_val_deg = int(math.degrees(target_val))
-            rospy.loginfo("Setting %s to [%s radians] -> [itp %s] ", self.name, target_val, intp_val)
-            print("Time to write to servo: ", time2 - time1)
+        if self.smooth:
+            self.trajectory.append(float(intp_val))
+        else:
+            # Write interpolated value to servo
+            prev_val = self.servo.angle
+            time1 = time.time()
+            self.servo.angle = float(intp_val)
+            time2 = time.time()
+            if abs(prev_val - intp_val) > 0.1:
+                # Log interpolated value and original target value
+                intp_val = '%.2f' % intp_val
+                target_val = '%.3f' % target_val
+                # target_val_deg = int(math.degrees(target_val))
+                rospy.loginfo("Setting %s to [%s radians] -> [itp %s] ", self.name, target_val, intp_val)
 
 
 # Joint class done =========================================================================================
@@ -101,7 +105,7 @@ class Joint:
 # Structure to manage all joints of robots, contains all joints inside a dict
 # Contains methods to set all joints to default position and to update joint state of physical robot according to incoming target joint state
 class Body:
-    def __init__(self) -> None:
+    def __init__(self, smooth) -> None:
 
         # Dict to store joint objects
         self.joints = {}
@@ -109,24 +113,24 @@ class Body:
         # Init joints [name,pin,default,min,middle,max]
 
         # Left arm
-        self.joints["LH"] = Joint("LH",3, default_val=10, angmin=-1.4, angmax=1.4, min_val=165, max_val=170, invert=True)
-        self.joints["LW"] = Joint("LW", 2, angmin=-1.4, angmax=1.4, min_val=10, max_val=170)
-        self.joints["LEB"] = Joint("LEB", 1, angmin=-1.4, angmax=0, min_val=10, max_val=90, invert=True)
-        self.joints["LSH"] = Joint("LSH", 4, angmin=-1.2, angmax=1.6, min_val=10, max_val=170, invert=True)
-        self.joints["LSL"] = Joint("LSL", 0, angmin=-1.4, angmax=1.4, min_val=10, max_val=180, invert=True)
-        self.joints["LSF"] = Joint("LSF", 5, angmin=-2.186, angmax=0.615, min_val=10, max_val=180)
+        self.joints["LH"] = Joint("LH",3, default_val=10, angmin=-1.4, angmax=1.4, min_val=165, max_val=170, invert=True, smooth=smooth)
+        self.joints["LW"] = Joint("LW", 2, angmin=-1.4, angmax=1.4, min_val=10, max_val=170, smooth=smooth)
+        self.joints["LEB"] = Joint("LEB", 1, angmin=-1.4, angmax=0, min_val=10, max_val=90, invert=True, smooth=smooth)
+        self.joints["LSH"] = Joint("LSH", 4, angmin=-1.2, angmax=1.6, min_val=10, max_val=170, invert=True, smooth=smooth)
+        self.joints["LSL"] = Joint("LSL", 0, angmin=-1.4, angmax=1.4, min_val=10, max_val=180, invert=True, smooth=smooth)
+        self.joints["LSF"] = Joint("LSF", 5, angmin=-2.186, angmax=0.615, min_val=10, max_val=180, smooth=smooth)
 
         # Right arm
-        self.joints["RH"] = Joint("RH",9, default_val=170, angmin=-1.4, angmax=1.4, min_val=165, max_val=170)
-        self.joints["RW"] = Joint("RW", 8, angmin=-1.4, angmax=1.4, min_val=10, max_val=180)
-        self.joints["REB"] = Joint("REB", 7, angmin=0, angmax=1.4, min_val=90, max_val=170, invert=True)
-        self.joints["RSH"] = Joint("RSH", 10, angmin=-1.6, angmax=1.2, min_val=10, max_val=170, invert=True)
-        self.joints["RSL"] = Joint("RSL", 6, angmin=-1.4, angmax=1.4, min_val=10, max_val=180, invert=True)
-        self.joints["RSF"] = Joint("RSF", 11, angmin=-2.186, angmax=0.615, min_val=10, max_val=180, invert=True)
+        self.joints["RH"] = Joint("RH",9, default_val=170, angmin=-1.4, angmax=1.4, min_val=165, max_val=170, smooth=smooth)
+        self.joints["RW"] = Joint("RW", 8, angmin=-1.4, angmax=1.4, min_val=10, max_val=180, smooth=smooth)
+        self.joints["REB"] = Joint("REB", 7, angmin=0, angmax=1.4, min_val=90, max_val=170, invert=True, smooth=smooth)
+        self.joints["RSH"] = Joint("RSH", 10, angmin=-1.6, angmax=1.2, min_val=10, max_val=170, invert=True, smooth=smooth)
+        self.joints["RSL"] = Joint("RSL", 6, angmin=-1.4, angmax=1.4, min_val=10, max_val=180, invert=True, smooth=smooth)
+        self.joints["RSF"] = Joint("RSF", 11, angmin=-2.186, angmax=0.615, min_val=10, max_val=180, invert=True, smooth=smooth)
 
         # Head
-        self.joints["NH"] = Joint("NF", 12, angmin=-1.4, angmax=1.4, min_val=10, max_val=180)
-        self.joints["NF"] = Joint("NH", 13, angmin=-1.4, angmax=1.4, min_val=10, max_val=180)
+        self.joints["NH"] = Joint("NF", 12, angmin=-1.4, angmax=1.4, min_val=10, max_val=180, smooth=smooth)
+        self.joints["NF"] = Joint("NH", 13, angmin=-1.4, angmax=1.4, min_val=10, max_val=180, smooth=smooth)
 
     # Set all servos to default position
     def allToDef(self):
@@ -180,11 +184,12 @@ def callback(JointState):
 
 if __name__ == '__main__':
     # Init node
+    SMOOTH = True
     rospy.init_node("monkey_listener")
     rospy.loginfo("Monkey listener node has started")
 
     # Create body object which manages joints
-    body = Body()
+    body = Body(smooth=SMOOTH)
 
     # Set all joint to def positions
     body.allToDef()
@@ -196,6 +201,12 @@ if __name__ == '__main__':
     rospy.Subscriber("/joint_states", JointState, callback)
 
     # Spin() keeps python from exiting until this node is stopped
+    if SMOOTH:
+        time.sleep(60)
+        for i in range(len(body.joints['LH'].trajectory)):
+            for joint in body.joints:
+                joint.angle = body.joints[joint].trajectory[i]
+
     rospy.spin()
 
     print("Everything's cleaned up")
