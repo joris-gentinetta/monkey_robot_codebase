@@ -139,12 +139,12 @@ class Body:
     def updateJoints(self):
         time_update = time.time()
         # This list contains all active joints. If a joint name is removed, it will not get updated. Note that LSH/RSH are currently not contained
-        selected_joints = ["LSL"]
+        # selected_joints = ["LSL"]
         for joint_name, target_value in target_joint_positions.items():
-            if joint_name in selected_joints:
-                J = self.joints[joint_name]
-                # if J.name in working_joints:
-                J.set_to_itp_val(target_value)
+            # if joint_name in selected_joints:
+            J = self.joints[joint_name]
+            # if J.name in working_joints:
+            J.set_to_itp_val(target_value)
         time_update2 = time.time()
         print("Time to update all joints: ", time_update2 - time_update)
 
