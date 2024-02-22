@@ -518,7 +518,7 @@ class Utils:
             (planRA, suc_fracRA) = self.ifaceRA.move_group.compute_cartesian_path(col_paRA.poses, float(eef_step_size), 0.0) # last argument: jump_threshold -> not used
             # (planH, suc_fracH) = self.ifaceH.move_group.compute_cartesian_path(col_paH.poses, float(eef_step_size), 0.0) # last argument: jump_threshold -> not used
             # Inform user of success fraction
-            print(f"Sucess fraction LA: {suc_fracLA}, RA: {suc_fracRA}") #, H: {suc_fracH}")
+            print(f"Success fraction LA: {suc_fracLA}, RA: {suc_fracRA}") #, H: {suc_fracH}")
             if suc_fracLA == 1.0 and suc_fracRA == 1.0: # and suc_fracH == 1.0:
                 # Display the plan
                 display_trajectory = moveit_msgs.msg.DisplayTrajectory()

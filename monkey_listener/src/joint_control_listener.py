@@ -39,6 +39,7 @@ from numpy import interp
 from sensor_msgs.msg import JointState
 from adafruit_servokit import ServoKit
 kit = ServoKit(channels=16, frequency=333)
+import time
 
 # Imports done =============================================================================================
 
@@ -80,7 +81,10 @@ class Joint:
 
         # Write interpolated value to servo
         prev_val = self.servo.angle
+        time1 = time.time()
         self.servo.angle = float(intp_val)
+        time2 = time.time()
+        print("Time to write to servo: ", time2-time1)
         if abs(prev_val - intp_val) > 0.1:
             # Log interpolated value and original target value
             intp_val = '%.2f' % intp_val
