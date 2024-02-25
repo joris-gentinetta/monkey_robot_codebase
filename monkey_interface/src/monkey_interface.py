@@ -28,6 +28,8 @@ import sys
 import os
 import copy
 import pathlib
+import paramiko
+import time
 import rospy #pyright: ignore
 import colorsys
 import moveit_commander #pyright: ignore
@@ -318,7 +320,7 @@ class Utils:
 
     # Let user collect an arbitrary number of waypoints in gui, return the collected waypoints
 
-    def collect_wpoints_in_gui_genti(self, initial_wp_count):
+    def collect_wpoints(self, initial_wp_count, gui=None):
         wcounter = initial_wp_count  # For the shell interaction a waypoint counter is needed. An initial_count != 0 means that we will append new poses to a poseArray loaded form a json file
         wp_collecting_intent_status = ""
         wp_ns = "collected_waypoint"
@@ -336,8 +338,17 @@ class Utils:
             wpoint_valid = False
             # Try to get a valid wpoint
             while not wpoint_valid:
-                print("Move left arm to wp ", wcounter)
-                input("To save waypoint press [Enter]")
+                if gui:
+                    gui.addWaypointBtn.setText("Add <b>Left Arm</b> Waypoint")
+                    gui.addWaypointBtn.setEnabled(True)
+                    while not gui.save_waypoint:
+                        pass
+                    gui.addWaypointBtn.setEnabled(False)
+                    gui.save_waypoint = False
+                else:
+                    print("Move left arm to wp ", wcounter)
+                    input("To save waypoint press [Enter]")
+
                 # Get the last recorded pose of the interactive marker
                 # if self.iface.last_rec_im_pose:
                 wLA = self.ifaceLA.last_rec_im_pose
@@ -362,8 +373,16 @@ class Utils:
 
             wpoint_valid = False
             while not wpoint_valid:
-                print("Move right arm to wp ", wcounter)
-                input("To save waypoint press [Enter]")
+                if gui:
+                    gui.addWaypointBtn.setText("Add <b>Right Arm</b> Waypoint")
+                    gui.addWaypointBtn.setEnabled(True)
+                    while not gui.save_waypoint:
+                        pass
+                    gui.addWaypointBtn.setEnabled(False)
+                    gui.save_waypoint = False
+                else:
+                    print("Move right arm to wp ", wcounter)
+                    input("To save waypoint press [Enter]")
                 # Get the last recorded pose of the interactive marker
                 wRA = self.ifaceRA.last_rec_im_pose
                 print(wRA)
@@ -387,8 +406,16 @@ class Utils:
 
             # wpoint_valid = False
             # while not wpoint_valid:
-            #     print("Move head to wp ", wcounter)
-            #     input("To save waypoint press [Enter]")
+            #     if gui:
+            #         gui.addWaypointBtn.setText("Add <b>Head</b> Waypoint")
+            #         gui.addWaypointBtn.setEnabled(True)
+            #         while not gui.save_waypoint:
+            #             pass
+            #         gui.addWaypointBtn.setEnabled(False)
+            #         gui.save_waypoint = False
+            #     else:
+            #         print("Move head to wp ", wcounter)
+            #         input("To save waypoint press [Enter]")
             #     # Get the last recorded pose of the interactive marker
             #     # if self.iface.last_rec_im_pose:
             #     wH = self.ifaceH.last_rec_im_pose
@@ -621,13 +648,13 @@ class Utils:
         question = "Do you want to add new waypoints to the file "+file_name+" ? [Enter for yes, any key for no]"
         edit_ans = input(question)
         if edit_ans == "":
-            # If a poseArray was loaded, give these waypoints to the collect_wpoints_in_gui method,
+            # If a poseArray was loaded, give these waypoints to the collect_wpoints method,
             # which will append new waypoints and return a poseArray with all old poses + all new poses
             existing_wpoints = self.ifaceLA.loaded_json_wpoints
             # The coutner counting the existing waypoints in the waypoints array is incremented by one,
             #since the counter refers to the index refers to the next waypoint to be added
             n = len(existing_wpoints.poses) + 1
-            col_posesLA, col_posesRA = self.collect_wpoints_in_gui_genti(n) #, col_posesH
+            col_posesLA, col_posesRA = self.collect_wpoints(n) #, col_posesH
             if col_posesLA != None:
                 # Query saving of waypoints
                 self.querySave(col_posesLA, col_posesRA) #, col_posesH)
@@ -638,23 +665,22 @@ class Utils:
         self.queryCPP(col_posesLA, col_posesRA) #, col_posesH)
 
     # Query a valid 'mode' from the user, where mode is one of the scripts functionalities:
-    # {single pose goal, hardcoded trajectory,  collecting waypoints,loading and editing waypoints, exit}
+    # {single pose goal, hardcoded trajectory,  collecting waypoints, loading and editing waypoints, exit}
     def queryValidMode(self):
         print("")
         print("What do you want to do? : ")
-        print("[1]  Display the (hard coded) single pose goal")
-        print("[2]  Display the (hard coded) trajectory")
-        print("[3]  Collect waypoints for a cartesian path")
-        print("[4]  Load and edit waypoints from a specific json file ")
-        print("[5]  Exit")
+        print("[1]  Collect waypoints")
+        print("[2]  Load and edit saved waypoints")
+        print("[3]  Load a saved plan and execute it")
+        print("[4]  Exit")
         print("")
 
         mode = -1
         while True:
-            mode_in = input("Select mode [1 | 2 | 3 | 4 | 5]: ")
+            mode_in = input("Select mode [ 1 | 2 | 3 | 4 ]: ")
             try:
                 mode = int(mode_in)
-                if mode not in (1,2,3,4,5):
+                if mode not in (1, 2, 3, 4):
                     print("Unknown mode")
                 else:
                     break
@@ -669,6 +695,53 @@ class Utils:
         print("----------------------------------------------------------")
         print("Monkey Interface")
         print("----------------------------------------------------------")
+
+
+
+    def interact_with_monkey_listener(self, ssh_host='10.42.0.2', ssh_port='22', ssh_user='rm', ssh_key_path='~/.ssh/id_rsa',
+                                    remote_script_path='~/monkey_ws/src/monkey_listener/src/joint_control_listener.py'):
+        """
+        Interact with a remote script using SSH key for authentication.
+
+        :param ssh_host: String, the hostname or IP of the remote machine.
+        :param ssh_port: Integer, the port number to connect to on the remote machine.
+        :param ssh_user: String, the username for authentication.
+        :param ssh_key_path: String, the path to the SSH private key file.
+        :param remote_script_path: String, the path to the remote script that requires interaction.
+        """
+
+        # Initialize SSH client
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+        # Load SSH key
+        ssh_key = paramiko.RSAKey.from_private_key_file(ssh_key_path)
+
+        # Connect to the remote machine
+        ssh.connect(hostname=ssh_host, port=ssh_port, username=ssh_user, pkey=ssh_key)
+
+        # Start an interactive shell session
+        shell = ssh.invoke_shell()
+
+        def wait_until_ready(wait_time):
+            while True:
+                time.sleep(wait_time)
+                if shell.recv_ready():
+                    output = shell.recv(4096).decode()
+                    if 'ready_for_execution' in output:
+                        break
+
+        # Start the remote script
+        print(shell.send(f'python3 {remote_script_path}\n'))
+        wait_until_ready(2)
+
+        # Interact with the script
+        input_cmd = input("Press [Enter] to execute the trajectory")
+        print(shell.send(f'{input_cmd}\n'))
+
+        # Close the SSH connection
+        ssh.close()
+
 
 
 
@@ -688,18 +761,11 @@ def main():
         # Query user for a valid mode
         mode = helper.queryValidMode()
 
-        if mode == 1: # Plan display execute hard coded pose goal
-            # Plan and display trajectory to hard coded pose goal, query user for execution
-            helper.pdExamplePoseGoal()
-        elif mode == 2: # Plan display hard coded trajectory, query for execution
-            # Plan and display trajectory based on hardcoded waypoints
-            helper.pdExampleWaypoints()
-
-        elif mode == 3: # Let user collect waypoints in gui, query save and finally query execution
+        if mode == 1: # Let user collect waypoints in gui, query save and finally query execution
 
             # Collect waypoints in gui
-            # collected_pose_arrayLA, collected_pose_arrayRA, collected_pose_arrayH = helper.collect_wpoints_in_gui_genti(1)
-            collected_pose_arrayLA, collected_pose_arrayRA = helper.collect_wpoints_in_gui_genti(1)
+            # collected_pose_arrayLA, collected_pose_arrayRA, collected_pose_arrayH = helper.collect_wpoints(1)
+            collected_pose_arrayLA, collected_pose_arrayRA = helper.collect_wpoints(1)
             # Query save
             helper.querySave(collected_pose_arrayLA, collected_pose_arrayRA)  # , collected_pose_arrayH)
             # Make sure that all user set waypoints are being displayed
@@ -710,12 +776,15 @@ def main():
             # Query decision to plan car. path
             # helper.queryCPP(collected_pose_arrayLA, collected_pose_arrayRA, collected_pose_arrayH)
             helper.queryCPP(collected_pose_arrayLA, collected_pose_arrayRA)
-        elif mode == 4: # Load waypoints from json, potentially edit them
+        elif mode == 2:  # Load waypoints from json, potentially edit them
 
             # Query json file name, load poseArray, query appending new poses     
             helper.loadWaypointsFromJSON()
+        elif mode == 3:  # Load a saved plan and execute it
+            # Load a saved plan and execute it
+            helper.interact_with_monkey_listener()
 
-        elif mode == 5: # Exit
+        elif mode == 4: # Exit
             pass
 
         else:

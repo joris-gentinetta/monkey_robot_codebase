@@ -34,15 +34,17 @@ Last changed: 13.6.23
 '''
 
 # Imports ==================================================================================================
+
+import time
+import os
+import json
+import pathlib
+import argparse
 import rospy
 from numpy import interp
 from sensor_msgs.msg import JointState
 from adafruit_servokit import ServoKit
 kit = ServoKit(channels=16, frequency=333)
-import time
-import os
-import json
-import pathlib
 
 # Mapping from joint name to index in joint state message
 MAPPING = {
@@ -70,7 +72,7 @@ inverted_mapping = {value: key for key, value in MAPPING.items()}
 # Class to store the duty cycles of the predefined states and who performs the mapping from duty cycle to [-1,1]
 class Joint:
 
-    def __init__(self, _name, _motor_pin, default_val=90, min_val=10, max_val=170, angmin=-1.571, angmax=1.571, invert=False, smooth=False) -> None:
+    def __init__(self, _name, _motor_pin, default_val=90, min_val=10, max_val=170, angmin=-1.571, angmax=1.571, invert=False, from_json=False) -> None:
         # Init name, motor pin
         self.name = _name
         self.motor_pin = _motor_pin
@@ -90,7 +92,7 @@ class Joint:
         self.angMax = angmax
         self.invert = invert
 
-        self.smooth = smooth
+        self.from_json = from_json
         self.trajectory = [default_val]
 
 
@@ -130,7 +132,7 @@ class Joint:
 # Structure to manage all joints of robots, contains all joints inside a dict
 # Contains methods to set all joints to default position and to update joint state of physical robot according to incoming target joint state
 class Body:
-    def __init__(self, smooth) -> None:
+    def __init__(self, from_json) -> None:
 
         # Dict to store joint objects
         self.joints = {}
@@ -138,24 +140,24 @@ class Body:
         # Init joints [name,pin,default,min,middle,max]
 
         # Left arm
-        self.joints["LH"] = Joint("LH",3, default_val=10, angmin=-1.4, angmax=1.4, min_val=165, max_val=170, invert=True, smooth=smooth)
-        self.joints["LW"] = Joint("LW", 2, angmin=-1.4, angmax=1.4, min_val=10, max_val=170, smooth=smooth)
-        self.joints["LEB"] = Joint("LEB", 1, angmin=-1.4, angmax=0, min_val=10, max_val=90, invert=True, smooth=smooth)
-        self.joints["LSH"] = Joint("LSH", 4, angmin=-1.2, angmax=1.6, min_val=10, max_val=170, invert=True, smooth=smooth)
-        self.joints["LSL"] = Joint("LSL", 0, angmin=-1.4, angmax=1.4, min_val=10, max_val=180, invert=True, smooth=smooth)
-        self.joints["LSF"] = Joint("LSF", 5, angmin=-2.186, angmax=0.615, min_val=10, max_val=180, smooth=smooth)
+        self.joints["LH"] = Joint("LH",3, default_val=10, angmin=-1.4, angmax=1.4, min_val=165, max_val=170, invert=True, from_json=from_json)
+        self.joints["LW"] = Joint("LW", 2, angmin=-1.4, angmax=1.4, min_val=10, max_val=170, from_json=from_json)
+        self.joints["LEB"] = Joint("LEB", 1, angmin=-1.4, angmax=0, min_val=10, max_val=90, invert=True, from_json=from_json)
+        self.joints["LSH"] = Joint("LSH", 4, angmin=-1.2, angmax=1.6, min_val=10, max_val=170, invert=True, from_json=from_json)
+        self.joints["LSL"] = Joint("LSL", 0, angmin=-1.4, angmax=1.4, min_val=10, max_val=180, invert=True, from_json=from_json)
+        self.joints["LSF"] = Joint("LSF", 5, angmin=-2.186, angmax=0.615, min_val=10, max_val=180, from_json=from_json)
 
         # Right arm
-        self.joints["RH"] = Joint("RH",9, default_val=170, angmin=-1.4, angmax=1.4, min_val=165, max_val=170, smooth=smooth)
-        self.joints["RW"] = Joint("RW", 8, angmin=-1.4, angmax=1.4, min_val=10, max_val=180, smooth=smooth)
-        self.joints["REB"] = Joint("REB", 7, angmin=0, angmax=1.4, min_val=90, max_val=170, invert=True, smooth=smooth)
-        self.joints["RSH"] = Joint("RSH", 10, angmin=-1.6, angmax=1.2, min_val=10, max_val=170, invert=True, smooth=smooth)
-        self.joints["RSL"] = Joint("RSL", 6, angmin=-1.4, angmax=1.4, min_val=10, max_val=180, invert=True, smooth=smooth)
-        self.joints["RSF"] = Joint("RSF", 11, angmin=-2.186, angmax=0.615, min_val=10, max_val=180, invert=True, smooth=smooth)
+        self.joints["RH"] = Joint("RH",9, default_val=170, angmin=-1.4, angmax=1.4, min_val=165, max_val=170, from_json=from_json)
+        self.joints["RW"] = Joint("RW", 8, angmin=-1.4, angmax=1.4, min_val=10, max_val=180, from_json=from_json)
+        self.joints["REB"] = Joint("REB", 7, angmin=0, angmax=1.4, min_val=90, max_val=170, invert=True, from_json=from_json)
+        self.joints["RSH"] = Joint("RSH", 10, angmin=-1.6, angmax=1.2, min_val=10, max_val=170, invert=True, from_json=from_json)
+        self.joints["RSL"] = Joint("RSL", 6, angmin=-1.4, angmax=1.4, min_val=10, max_val=180, invert=True, from_json=from_json)
+        self.joints["RSF"] = Joint("RSF", 11, angmin=-2.186, angmax=0.615, min_val=10, max_val=180, invert=True, from_json=from_json)
 
         # Head
-        self.joints["NH"] = Joint("NF", 12, angmin=-1.4, angmax=1.4, min_val=10, max_val=180, smooth=smooth)
-        self.joints["NF"] = Joint("NH", 13, angmin=-1.4, angmax=1.4, min_val=10, max_val=180, smooth=smooth)
+        self.joints["NH"] = Joint("NF", 12, angmin=-1.4, angmax=1.4, min_val=10, max_val=180, from_json=from_json)
+        self.joints["NF"] = Joint("NH", 13, angmin=-1.4, angmax=1.4, min_val=10, max_val=180, from_json=from_json)
 
     # Set all servos to default position
     def allToDef(self):
@@ -208,14 +210,31 @@ def callback(JointState):
 
 if __name__ == '__main__':
     # Init node
-    SMOOTH = True
-    INTERPOLATION_STEPS = 10
-    if not SMOOTH:
+    parser = argparse.ArgumentParser(description='Robot execution node')
+    parser.add_argument('--from_json', default=False, required=False, help='Load plan from json file')
+    parser.add_argument('--interpolation_steps', default=10, required=False, help='How many steps between waypoints')
+    parser.add_argument('--filename', default=None, required=False, help='Name of the file to load')
+    args = parser.parse_args()
+
+    if args.from_json:
+        body = Body(args.from_json)
+        jsonObject = loadPlanFromJSON(args.filename)
+        for point in jsonObject.points:
+            for joint_id, position in enumerate(point.positions):
+                joint_name = inverted_mapping[joint_id]
+                body.joints[joint_name].add_to_trajectory(position, args.interpolation_steps)
+        execute = input("Press enter to start the trajectory")
+        if execute == '':
+            for i in range(len(body.joints['LH'].trajectory)):
+                for joint in body.joints.values():
+                    joint.servo.angle = joint.trajectory[i]
+
+    else:
         rospy.init_node("monkey_listener")
         rospy.loginfo("Monkey listener node has started")
 
         # Create body object which manages joints
-        body = Body(smooth=SMOOTH)
+        body = Body(args.from_json)
 
         # Set all joint to def positions
         body.allToDef()
@@ -228,18 +247,7 @@ if __name__ == '__main__':
 
         # Spin() keeps python from exiting until this node is stopped
         rospy.spin()
-    else:
-        body = Body(smooth=SMOOTH)
-        jsonObject = loadPlanFromJSON("plan_1") #todo
-        for point in jsonObject.points:
-            for joint_id, position in enumerate(point.positions):
-                joint_name = inverted_mapping[joint_id]
-                body.joints[joint_name].add_to_trajectory(position, INTERPOLATION_STEPS)
-        execute = input("Press enter to start the trajectory")
-        if execute == '':
-            for i in range(len(body.joints['LH'].trajectory)):
-                for joint in body.joints.values():
-                    joint.servo.angle = joint.trajectory[i]
+
     print("Everything's cleaned up")
 
 # Main done ============================================================================================
