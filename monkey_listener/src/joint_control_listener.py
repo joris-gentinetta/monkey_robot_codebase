@@ -40,7 +40,28 @@ from sensor_msgs.msg import JointState
 from adafruit_servokit import ServoKit
 kit = ServoKit(channels=16, frequency=333)
 import time
+import os
+import json
+import pathlib
 
+# Mapping from joint name to index in joint state message
+MAPPING = {
+    "NH": 0,
+    "NF": 1,
+    "RSF": 2,
+    "RSL": 3,
+    "RSH": 4,
+    "REB": 5,
+    "RW": 6,
+    "RH": 7,
+    "LSF": 8,
+    "LSL": 9,
+    "LSH": 10,
+    "LEB": 11,
+    "LW": 12,
+    "LH": 13
+}
+inverted_mapping = {value: key for key, value in MAPPING.items()}
 # Imports done =============================================================================================
 
 
@@ -70,7 +91,7 @@ class Joint:
         self.invert = invert
 
         self.smooth = smooth
-        self.trajectory = []
+        self.trajectory = [default_val]
 
 
     # Set joint servo to a value in [-1,1].
@@ -81,22 +102,26 @@ class Joint:
         if self.invert:
             # Attachment inversion
             intp_val = 180 - intp_val
-        if self.smooth:
-            self.trajectory.append(float(intp_val))
-        else:
-            # Write interpolated value to servo
-            prev_val = self.servo.angle
-            time1 = time.time()
-            self.servo.angle = float(intp_val)
-            time2 = time.time()
-            if abs(prev_val - intp_val) > 0.1:
-                # Log interpolated value and original target value
-                intp_val = '%.2f' % intp_val
-                target_val = '%.3f' % target_val
-                # target_val_deg = int(math.degrees(target_val))
-                rospy.loginfo("Setting %s to [%s radians] -> [itp %s] ", self.name, target_val, intp_val)
 
-
+        # Write interpolated value to servo
+        prev_val = self.servo.angle
+        time1 = time.time()
+        self.servo.angle = float(intp_val)
+        time2 = time.time()
+        if abs(prev_val - intp_val) > 0.1:
+            # Log interpolated value and original target value
+            intp_val = '%.2f' % intp_val
+            target_val = '%.3f' % target_val
+            # target_val_deg = int(math.degrees(target_val))
+            rospy.loginfo("Setting %s to [%s radians] -> [itp %s] ", self.name, target_val, intp_val)
+    def add_to_trajectory(self, target_val, interpolation_steps=10):
+        intp_val = interp(target_val, [self.angMin, self.angMax], [self.min_val, self.max_val])
+        if self.invert:
+            intp_val = 180 - intp_val
+        difference = intp_val - self.trajectory[-1]
+        for i in range(1, interpolation_steps):
+            self.trajectory.append(self.trajectory[-1] + difference/interpolation_steps)
+        self.trajectory.append(float(intp_val))
 # Joint class done =========================================================================================
 
 
@@ -155,6 +180,16 @@ class Body:
 
 # Body class done ================================================================================================
 
+def loadPlanFromJSON(file_name):
+    path_to_current_dir = str(pathlib.Path().resolve()) # The path gets loaded from the moveit workspace top folder
+    saved_files = os.listdir(path_to_current_dir + "/saved_plans")
+    saved_files = list(set([f.split('.')[0] for f in saved_files]))
+    path_name = path_to_current_dir + "/saved_plans/" + file_name + '.json'
+
+    with open(path_name, 'rb') as f:
+        # Get poseArray data from json object
+        jsonOjbect = json.load(f)
+    return jsonOjbect
 
 # Main ===========================================================================================================
 
@@ -162,20 +197,9 @@ class Body:
 def callback(JointState):
     time_callback = time.time()
     # Copy incoming joint state target data into storage variable
-    target_joint_positions["NH"] = JointState.position[0]
-    target_joint_positions["NF"] = JointState.position[1]
-    target_joint_positions["RSF"] = JointState.position[2]
-    target_joint_positions["RSL"] = JointState.position[3]
-    target_joint_positions["RSH"] = JointState.position[4]
-    target_joint_positions["REB"] = JointState.position[5]
-    target_joint_positions["RW"] = JointState.position[6]
-    target_joint_positions["RH"] = JointState.position[7]
-    target_joint_positions["LSF"] = JointState.position[8]
-    target_joint_positions["LSL"] = JointState.position[9]
-    target_joint_positions["LSH"] = JointState.position[10]
-    target_joint_positions["LEB"] = JointState.position[11]
-    target_joint_positions["LW"] = JointState.position[12]
-    target_joint_positions["LH"] = JointState.position[13]
+    for key, value in MAPPING.items():
+        target_joint_positions[key] = JointState.position[value]
+
 
     # Update joints according to target joint states
     body.updateJoints()
@@ -185,31 +209,37 @@ def callback(JointState):
 if __name__ == '__main__':
     # Init node
     SMOOTH = True
-    rospy.init_node("monkey_listener")
-    rospy.loginfo("Monkey listener node has started")
+    INTERPOLATION_STEPS = 10
+    if not SMOOTH:
+        rospy.init_node("monkey_listener")
+        rospy.loginfo("Monkey listener node has started")
 
-    # Create body object which manages joints
-    body = Body(smooth=SMOOTH)
+        # Create body object which manages joints
+        body = Body(smooth=SMOOTH)
 
-    # Set all joint to def positions
-    body.allToDef()
+        # Set all joint to def positions
+        body.allToDef()
 
-    # For storing target joint positions which subscriber receives
-    target_joint_positions = {}
+        # For storing target joint positions which subscriber receives
+        target_joint_positions = {}
 
-    # Create subscriber to joint-state topic
-    rospy.Subscriber("/joint_states", JointState, callback)
+        # Create subscriber to joint-state topic
+        rospy.Subscriber("/joint_states", JointState, callback)
 
-    # Spin() keeps python from exiting until this node is stopped
-    if SMOOTH:
-        time.sleep(60)
-        for i in range(len(body.joints['LH'].trajectory)):
-            time.sleep(0.1)
-            for joint in body.joints.values():
-                joint.servo.angle = joint.trajectory[i]
-
-    rospy.spin()
-
+        # Spin() keeps python from exiting until this node is stopped
+        rospy.spin()
+    else:
+        body = Body(smooth=SMOOTH)
+        jsonObject = loadPlanFromJSON("plan_1") #todo
+        for point in jsonObject.points:
+            for joint_id, position in enumerate(point.positions):
+                joint_name = inverted_mapping[joint_id]
+                body.joints[joint_name].add_to_trajectory(position, INTERPOLATION_STEPS)
+        execute = input("Press enter to start the trajectory")
+        if execute == '':
+            for i in range(len(body.joints['LH'].trajectory)):
+                for joint in body.joints.values():
+                    joint.servo.angle = joint.trajectory[i]
     print("Everything's cleaned up")
 
 # Main done ============================================================================================

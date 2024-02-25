@@ -457,6 +457,19 @@ class Utils:
             with open(path_nameRA, 'w+') as f:
                 json.dump(json_pose_arrayRA, f)
 
+    def queryPlanSave(self, plan):
+        ans = input("Do you want to save these waypoints? [yes | Enter]")
+        if ans != "":
+            json_plan = json_message_converter.convert_ros_message_to_json(plan)
+            desired_filename = input("Please specify an (unused) filename without file type: ")
+            # Consctruct path name
+            path_to_current_dir = str(pathlib.Path().resolve())  # The path gets saved in the moveit workspace top folder
+            os.makedirs(path_to_current_dir + "/saved_plans", exist_ok=True)
+            path_name = path_to_current_dir + "/saved_plans/" + desired_filename + '_LA.json'
+            # Dump json data into json file
+            with open(path_name, 'w+') as f:
+                json.dump(json_plan, f)
+
     # Create three hardcoded waypoints
     # def pdExampleWaypoints(self):
     #     # Create waypoints based on current pose of end effector
@@ -516,17 +529,23 @@ class Utils:
             print(f"Success fraction LA: {suc_fracLA}, RA: {suc_fracRA}") #, H: {suc_fracH}")
             if suc_fracLA == 1.0 and suc_fracRA == 1.0: # and suc_fracH == 1.0:
                 # Display the plan
-                display_trajectory = moveit_msgs.msg.DisplayTrajectory()
-                display_trajectory.trajectory_start = self.ifaceLA.robot.get_current_state()
-                display_trajectory.trajectory.append(planLA)
-                combined_plan = self.join_plans(planLA, planRA)
+                display_trajectoryLA = moveit_msgs.msg.DisplayTrajectory()
+                display_trajectoryRA = moveit_msgs.msg.DisplayTrajectory()
+                display_trajectoryLA.trajectory_start = self.ifaceLA.robot.get_current_state()
+                display_trajectoryRA.trajectory_start = self.ifaceRA.robot.get_current_state()
+                display_trajectoryLA.trajectory.append(planLA)
+                display_trajectoryRA.trajectory.append(planRA)
                 # Publish the plan
-                self.ifaceLA.display_trajectory_publisher.publish(display_trajectory)
+                self.ifaceLA.display_trajectory_publisher.publish(display_trajectoryLA)
+                self.ifaceRA.display_trajectory_publisher.publish(display_trajectoryRA)
+
+                combined_plan = self.join_plans(planLA, planRA)
+
                 # Query decision to execute cart. plan
                 exec_dec = input("Do you want to execute the cart. plan? [Enter for yes, any key for no]")
                 if exec_dec == "":
                     self.ifaceLA.move_group.execute(combined_plan, wait=True)  # Waits until feedback from execution is received
-                #TODO ASK TO SAVE FOR FASTER EXECUTION
+                self.queryPlanSave(combined_plan)
             else:
                 print("Planning failed")
     def join_plans(self, planL, planR):
@@ -550,6 +569,7 @@ class Utils:
             combined_plan.joint_trajectory.points.append(point)
         print('combined_plan: \n', combined_plan)
         return combined_plan
+
 
 
     # Query the user for the name of json file containing a poseArray, then query saving of cart. path, then query execution of cart. path
