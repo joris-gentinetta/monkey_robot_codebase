@@ -26,6 +26,7 @@ Last changed: 28.6.23
 # imports ==================================================================================================
 import sys
 import os
+from os.path import join
 import copy
 import pathlib
 import paramiko
@@ -147,7 +148,7 @@ class MoveGroupInterface(object):
         
         # Variable to store last recorded position of IM in Rviz (received from Subscriber) 
         self.last_rec_im_pose = None
-        # Array to store waypoints collected in Rviz gui 
+        # Array to store waypoints collected in Rviz self.gui
         self.wpoints = []
 
         # Indicator for whether we are appending to a loaded json pose array
@@ -308,21 +309,22 @@ class MoveGroupInterface(object):
 
 # Utility class mainly providing often used motion planning functionalities such as:
 # - Planning, displaying and executing a single pose goal
-# - Collecting waypoints in gui and computing a trajectory T for the eef of one planning group to go through
+# - Collecting waypoints in self.gui and computing a trajectory T for the eef of one planning group to go through
 # - Saving, loading and editing of T
 # This helper class could be integrated into the moveGroupInterface, this would however decrease code readability.
 class Utils:
-    def __init__(self, interface_left_arm, inteface_right_arm, interface_head) -> None:
+    def __init__(self, interface_left_arm, inteface_right_arm, interface_head, gui=None) -> None:
         # A handle to the moveGroupInteface is necessary for some actions.
         self.ifaceLA = interface_left_arm
         self.ifaceRA = inteface_right_arm
         # self.ifaceH = interface_head
+        self.gui = self.gui
 
-    # Let user collect an arbitrary number of waypoints in gui, return the collected waypoints
+    # Let user collect an arbitrary number of waypoints in self.gui, return the collected waypoints
 
-    def collect_wpoints(self, initial_wp_count, gui=None):
+    def collect_wpoints(self, initial_wp_count):
         wcounter = initial_wp_count  # For the shell interaction a waypoint counter is needed. An initial_count != 0 means that we will append new poses to a poseArray loaded form a json file
-        wp_collecting_intent_status = ""
+        collecting_WP = True
         wp_ns = "collected_waypoint"
         col_posesLA = PoseArray()  # Create empty poseArray
         col_posesRA = PoseArray()
@@ -334,17 +336,17 @@ class Utils:
             col_posesRA = self.ifaceRA.loaded_json_wpoints
             wp_ns = "appended_waypoints"
         # Collect as many poses as the user wants
-        while wp_collecting_intent_status == "":
+        while collecting_WP == True:
             wpoint_valid = False
             # Try to get a valid wpoint
             while not wpoint_valid:
-                if gui:
-                    gui.addWaypointBtn.setText("Add <b>Left Arm</b> Waypoint")
-                    gui.addWaypointBtn.setEnabled(True)
-                    while not gui.save_waypoint:
+                if self.gui:
+                    self.gui.addWaypointBtn.setText("Add <b>Left Arm</b> Waypoint")
+                    self.gui.addWaypointBtn.setEnabled(True)
+                    while not self.gui.add_waypoint:
                         pass
-                    gui.addWaypointBtn.setEnabled(False)
-                    gui.save_waypoint = False
+                    self.gui.addWaypointBtn.setEnabled(False)
+                    self.gui.add_waypoint = False
                 else:
                     print("Move left arm to wp ", wcounter)
                     input("To save waypoint press [Enter]")
@@ -361,25 +363,27 @@ class Utils:
                     if suc_fracLA == 1.0:
                         break
                     else:
-                        try_again_dec = input(
-                            "Planning failed. Do you want to try again? [Enter | no]")
-                        if try_again_dec != "":
-                            return None
+                        out = 'Planning failed. Try again.'
+                        if self.gui:
+                            self.gui.outputText.append(out)
+                        else:
+                            print(out)
                 else:
-                    try_again_dec = input(
-                        "Invalid waypoint (outside robot range). Do you want to try again? [Enter | no]")
-                    if try_again_dec != "":
-                        return None
+                    out = 'Invalid waypoint (outside robot range). Try again.'
+                    if self.gui:
+                        self.gui.outputText.append(out)
+                    else:
+                        print(out)
 
             wpoint_valid = False
             while not wpoint_valid:
-                if gui:
-                    gui.addWaypointBtn.setText("Add <b>Right Arm</b> Waypoint")
-                    gui.addWaypointBtn.setEnabled(True)
-                    while not gui.save_waypoint:
+                if self.gui:
+                    self.gui.addWaypointBtn.setText("Add <b>Right Arm</b> Waypoint")
+                    self.gui.addWaypointBtn.setEnabled(True)
+                    while not self.gui.add_waypoint:
                         pass
-                    gui.addWaypointBtn.setEnabled(False)
-                    gui.save_waypoint = False
+                    self.gui.addWaypointBtn.setEnabled(False)
+                    self.gui.add_waypoint = False
                 else:
                     print("Move right arm to wp ", wcounter)
                     input("To save waypoint press [Enter]")
@@ -394,25 +398,27 @@ class Utils:
                     if suc_fracRA == 1.0:
                         break
                     else:
-                        try_again_dec = input(
-                            "Planning failed. Do you want to try again? [Enter | no]")
-                        if try_again_dec != "":
-                            return None
+                        out = 'Planning failed. Try again.'
+                        if self.gui:
+                            self.gui.outputText.append(out)
+                        else:
+                            print(out)
                 else:
-                    try_again_dec = input(
-                        "Invalid waypoint (outside robot range). Do you want to try again? [Enter | no]")
-                    if try_again_dec != "":
-                        return None
+                    out = 'Invalid waypoint (outside robot range). Try again.'
+                    if self.gui:
+                        self.gui.outputText.append(out)
+                    else:
+                        print(out)
 
             # wpoint_valid = False
             # while not wpoint_valid:
-            #     if gui:
-            #         gui.addWaypointBtn.setText("Add <b>Head</b> Waypoint")
-            #         gui.addWaypointBtn.setEnabled(True)
-            #         while not gui.save_waypoint:
+            #     if self.gui:
+            #         self.gui.addWaypointBtn.setText("Add <b>Head</b> Waypoint")
+            #         self.gui.addWaypointBtn.setEnabled(True)
+            #         while not self.gui.add_waypoint:
             #             pass
-            #         gui.addWaypointBtn.setEnabled(False)
-            #         gui.save_waypoint = False
+            #         self.gui.addWaypointBtn.setEnabled(False)
+            #         self.gui.add_waypoint = False
             #     else:
             #         print("Move head to wp ", wcounter)
             #         input("To save waypoint press [Enter]")
@@ -422,24 +428,24 @@ class Utils:
             #     print(wH)
             #     wpoint_valid = self.ifaceH.isValid(wH)
             #     if wpoint_valid:
-            #         # Plan a path
-            #         (planH, suc_fracH) = self.ifaceH.move_group.compute_cartesian_path(col_posesH.poses + [wH],
-            #                                                                               float(EEF_STEP_SIZE),
-            #                                                                               0.0)
-            #         if suc_fracH == 1.0:
-            #             break
-            #         else:
-            #             try_again_dec = input(
-            #                 "Planning failed. Do you want to try again? [Enter | no]")
-            #             if try_again_dec != "":
-            #                 return None
-            #     else:
-            #         try_again_dec = input(
-            #             "Invalid waypoint (outside robot range). Do you want to try again? [Enter | no]")
-            #         if try_again_dec != "":
-            #             return None
-
-
+                    # Plan a path
+                #     (planH, suc_fracH) = self.ifaceH.move_group.compute_cartesian_path(col_posesH.poses + [wH],
+                #                                                                           float(EEF_STEP_SIZE),
+                #                                                                           0.0)
+                #     if suc_fracH == 1.0:
+                #         break
+                #     else:
+                #         out = 'Planning failed. Try again.'
+                #         if self.gui:
+                #             self.gui.outputText.append(out)
+                #         else:
+               #               print(out)
+                # else:
+                #     out = 'Invalid waypoint (outside robot range). Try again.'
+                #     if self.gui:
+                #         self.gui.outputText.append(out)
+                #     else:
+                #        print(out)
 
             col_posesLA.poses.append(wLA)
             col_posesRA.poses.append(wRA)
@@ -460,42 +466,53 @@ class Utils:
             self.ifaceRA.markerArrayPub.publish(self.ifaceRA.markerArray)
             # self.ifaceH.markerArrayPub.publish(self.ifaceH.markerArray)
             # Query continuation of waypoint collection
-            wp_collecting_intent_status = input("Do you want to add another waypoint? [ Enter | no]")
+            if self.gui:
+                self.gui.saveBtn.setEnabled(True)
+                self.gui.contBtn.setEnabled(True)
+                while True:
+                    if self.gui.save_waypoints:
+                        filename = self.gui.fileNameEdit.text()
+                        self.save_WP(col_posesLA, col_posesRA, filename)  # , col_posesH)
+                        collecting_WP = False
+                        break
+                    elif self.gui.cont_waypoints:
+                        break
+                self.gui.save_waypoints = False
+                self.gui.cont_waypoints = False
+                self.gui.saveBtn.setEnabled(False)
+                self.gui.contBtn.setEnabled(False)
+            else:
+                cont = input("Do you want to continue collecting waypoints? [Enter | no]")
+                if cont != "":
+                    collecting_WP = False
 
         return col_posesLA, col_posesRA #, col_posesH
     # Query saving of poseArray from user, if desired query name of json file to save poseArray to. The file name without .json
-    def querySave(self,paLA, paRA): #, paH):
-        # Query saving from user
-        ans = input("Do you want to save these waypoints? [yes | Enter]")
-        if ans != "":
-            # Query target json file name (without .json ending)
-            desired_filename = input("Please specify an (unused) filename without file type: ")
-            # Consctruct path name
-            path_to_current_dir = str(pathlib.Path().resolve()) # The path gets saved in the moveit workspace top folder
-            os.makedirs(path_to_current_dir + "/saved_waypoints", exist_ok=True)
-            path_nameLA = path_to_current_dir + "/saved_waypoints/" + desired_filename + '_LA.json'
-            path_nameRA = path_to_current_dir + "/saved_waypoints/" + desired_filename + '_RA.json'
-            # Convert json poseArray to json
-            json_pose_arrayLA = json_message_converter.convert_ros_message_to_json(paLA)
-            json_pose_arrayRA = json_message_converter.convert_ros_message_to_json(paRA)
-            # Dump json data into json file
-            with open(path_nameLA, 'w+') as f:
-                json.dump(json_pose_arrayLA, f)
-            with open(path_nameRA, 'w+') as f:
-                json.dump(json_pose_arrayRA, f)
+    def save_WP(self,paLA, paRA, filename): #, paH):
+        # Consctruct path name
+        path_to_current_dir = str(pathlib.Path().resolve()) # The path gets saved in the moveit workspace top folder
+        os.makedirs(path_to_current_dir + "/saved_waypoints", exist_ok=True)
+        path_nameLA = path_to_current_dir + "/saved_waypoints/" + filename + '_LA.json'
+        path_nameRA = path_to_current_dir + "/saved_waypoints/" + filename + '_RA.json'
+        # Convert json poseArray to json
+        json_pose_arrayLA = json_message_converter.convert_ros_message_to_json(paLA)
+        json_pose_arrayRA = json_message_converter.convert_ros_message_to_json(paRA)
+        # Dump json data into json file
+        with open(path_nameLA, 'w+') as f:
+            json.dump(json_pose_arrayLA, f)
+        with open(path_nameRA, 'w+') as f:
+            json.dump(json_pose_arrayRA, f)
 
-    def queryPlanSave(self, plan):
-        ans = input("Do you want to save these waypoints? [yes | Enter]")
-        if ans != "":
-            json_plan = json_message_converter.convert_ros_message_to_json(plan)
-            desired_filename = input("Please specify an (unused) filename without file type: ")
-            # Consctruct path name
-            path_to_current_dir = str(pathlib.Path().resolve())  # The path gets saved in the moveit workspace top folder
-            os.makedirs(path_to_current_dir + "/saved_plans", exist_ok=True)
-            path_name = path_to_current_dir + "/saved_plans/" + desired_filename + '_LA.json'
-            # Dump json data into json file
-            with open(path_name, 'w+') as f:
-                json.dump(json_plan, f)
+    def save_plan(self, plan, filename):
+        json_plan = json_message_converter.convert_ros_message_to_json(plan)
+
+        # Consctruct path name
+        path_to_current_dir = str(pathlib.Path().resolve())  # The path gets saved in the moveit workspace top folder
+        os.makedirs(path_to_current_dir + "/saved_plans", exist_ok=True)
+        path_name = path_to_current_dir + "/saved_plans/" + filename + '_LA.json'
+        # Dump json data into json file
+        with open(path_name, 'w+') as f:
+            json.dump(json_plan, f)
 
     # Create three hardcoded waypoints
     # def pdExampleWaypoints(self):
@@ -544,37 +561,31 @@ class Utils:
     #         self.iface.go_to_pose_goal(pose_goal)
 
     # Query if user wants to plan to a cartesian path. If so, plan it. Then, query for execution. If planning failed, exit.
-    def queryCPP(self,col_paLA, col_paRA): #, col_paH):
-        # Query planning of cartesian path
-        execute_cart_path_goal_dec = input("Do you want to plan a cart. path from the waypoints? [Enter for yes, any key for no]\n")
-        if execute_cart_path_goal_dec == "":
-            # Plan a path
-            (planLA, suc_fracLA) = self.ifaceLA.move_group.compute_cartesian_path(col_paLA.poses, float(EEF_STEP_SIZE), 0.0) # last argument: jump_threshold -> not used
-            (planRA, suc_fracRA) = self.ifaceRA.move_group.compute_cartesian_path(col_paRA.poses, float(EEF_STEP_SIZE), 0.0) # last argument: jump_threshold -> not used
-            # (planH, suc_fracH) = self.ifaceH.move_group.compute_cartesian_path(col_paH.poses, float(EEF_STEP_SIZE), 0.0) # last argument: jump_threshold -> not used
-            # Inform user of success fraction
-            print(f"Success fraction LA: {suc_fracLA}, RA: {suc_fracRA}") #, H: {suc_fracH}")
-            if suc_fracLA == 1.0 and suc_fracRA == 1.0: # and suc_fracH == 1.0:
-                # Display the plan
-                display_trajectoryLA = moveit_msgs.msg.DisplayTrajectory()
-                display_trajectoryRA = moveit_msgs.msg.DisplayTrajectory()
-                display_trajectoryLA.trajectory_start = self.ifaceLA.robot.get_current_state()
-                display_trajectoryRA.trajectory_start = self.ifaceRA.robot.get_current_state()
-                display_trajectoryLA.trajectory.append(planLA)
-                display_trajectoryRA.trajectory.append(planRA)
-                # Publish the plan
-                self.ifaceLA.display_trajectory_publisher.publish(display_trajectoryLA)
-                self.ifaceRA.display_trajectory_publisher.publish(display_trajectoryRA)
+    def CPP(self,col_paLA, col_paRA): #, col_paH):
+        # Plan a path
+        (planLA, suc_fracLA) = self.ifaceLA.move_group.compute_cartesian_path(col_paLA.poses, float(EEF_STEP_SIZE), 0.0) # last argument: jump_threshold -> not used
+        (planRA, suc_fracRA) = self.ifaceRA.move_group.compute_cartesian_path(col_paRA.poses, float(EEF_STEP_SIZE), 0.0) # last argument: jump_threshold -> not used
+        # (planH, suc_fracH) = self.ifaceH.move_group.compute_cartesian_path(col_paH.poses, float(EEF_STEP_SIZE), 0.0) # last argument: jump_threshold -> not used
+        # Inform user of success fraction
+        print(f"Success fraction LA: {suc_fracLA}, RA: {suc_fracRA}") #, H: {suc_fracH}")
+        if suc_fracLA == 1.0 and suc_fracRA == 1.0: # and suc_fracH == 1.0:
+            # Display the plan
+            display_trajectoryLA = moveit_msgs.msg.DisplayTrajectory()
+            display_trajectoryRA = moveit_msgs.msg.DisplayTrajectory()
+            display_trajectoryLA.trajectory_start = self.ifaceLA.robot.get_current_state()
+            display_trajectoryRA.trajectory_start = self.ifaceRA.robot.get_current_state()
+            display_trajectoryLA.trajectory.append(planLA)
+            display_trajectoryRA.trajectory.append(planRA)
+            # Publish the plan
+            self.ifaceLA.display_trajectory_publisher.publish(display_trajectoryLA)
+            self.ifaceRA.display_trajectory_publisher.publish(display_trajectoryRA)
 
-                combined_plan = self.join_plans(planLA, planRA)
+            combined_plan = self.join_plans(planLA, planRA)
+            return combined_plan
+        else:
+            print("Planning failed")
+            return None
 
-                # Query decision to execute cart. plan
-                exec_dec = input("Do you want to execute the cart. plan? [Enter for yes, any key for no]")
-                if exec_dec == "":
-                    self.ifaceLA.move_group.execute(combined_plan, wait=True)  # Waits until feedback from execution is received
-                self.queryPlanSave(combined_plan)
-            else:
-                print("Planning failed")
     def join_plans(self, planL, planR):
         # Combine joint names from both plans
         print('planL: \n', planL)
@@ -698,8 +709,8 @@ class Utils:
 
 
 
-    def interact_with_monkey_listener(self, ssh_host='10.42.0.2', ssh_port='22', ssh_user='rm', ssh_key_path='~/.ssh/id_rsa',
-                                    remote_script_path='~/monkey_ws/src/monkey_listener/src/joint_control_listener.py'):
+    def interact_with_monkey_listener(self, filename, ssh_host='10.42.0.2', ssh_port='22', ssh_user='rm', ssh_key_path='~/.ssh/id_rsa',
+                                    remote_script_path='~/monkey_ws/src/monkey_listener/src/joint_control_listener.py', interpolation_steps=10):
         """
         Interact with a remote script using SSH key for authentication.
 
@@ -731,8 +742,14 @@ class Utils:
                     if 'ready_for_execution' in output:
                         break
 
+        # copy the file to the remote machine
+        sftp = ssh.open_sftp()
+        path_to_current_dir = str(pathlib.Path().resolve())
+        sftp.put(join(path_to_current_dir, 'saved_plans', filename), os.path.dirname(remote_script_path))
+        sftp.close()
+
         # Start the remote script
-        print(shell.send(f'python3 {remote_script_path}\n'))
+        print(shell.send(f'python3 {remote_script_path} --from_json True --interpolation_steps {interpolation_steps} --filename {filename}\n'))
         wait_until_ready(2)
 
         # Interact with the script
@@ -761,9 +778,9 @@ def main():
         # Query user for a valid mode
         mode = helper.queryValidMode()
 
-        if mode == 1: # Let user collect waypoints in gui, query save and finally query execution
+        if mode == 1: # Let user collect waypoints in self.gui, query save and finally query execution
 
-            # Collect waypoints in gui
+            # Collect waypoints in self.gui
             # collected_pose_arrayLA, collected_pose_arrayRA, collected_pose_arrayH = helper.collect_wpoints(1)
             collected_pose_arrayLA, collected_pose_arrayRA = helper.collect_wpoints(1)
             # Query save
@@ -775,9 +792,18 @@ def main():
 
             # Query decision to plan car. path
             # helper.queryCPP(collected_pose_arrayLA, collected_pose_arrayRA, collected_pose_arrayH)
-            helper.queryCPP(collected_pose_arrayLA, collected_pose_arrayRA)
+            plan = helper.queryCPP(collected_pose_arrayLA, collected_pose_arrayRA)
+            if plan:
+                # Query decision to execute cart. plan
+                exec_dec = input("Do you want to execute the cart. plan? [Enter for yes, any key for no]")
+                if exec_dec == "":
+                    helper.ifaceLA.move_group.execute(plan,
+                                                    wait=True)  # Waits until feedback from execution is received
+                ans = input("Do you want to save the plan? [yes | Enter]")
+                if ans != "":
+                    filename = input("Please specify an (unused) filename without file type: ")
+                    helper.save_plan(plan, filename)
         elif mode == 2:  # Load waypoints from json, potentially edit them
-
             # Query json file name, load poseArray, query appending new poses     
             helper.loadWaypointsFromJSON()
         elif mode == 3:  # Load a saved plan and execute it
