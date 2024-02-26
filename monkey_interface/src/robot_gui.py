@@ -1,18 +1,29 @@
+#!/usr/bin/env python3
+
 import sys
+import time
+import threading
+
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QPushButton, QVBoxLayout,
                              QWidget, QTextEdit, QLineEdit, QLabel, QComboBox)
 from monkey_interface import MoveGroupInterface, Utils
 
-# Create interface to Moveit:RobotCommander (move-group python interface)
-interface_left_arm = MoveGroupInterface('monkey_left_arm')
-interface_right_arm = MoveGroupInterface('monkey_right_arm')
-interface_head = MoveGroupInterface('head')
 
-# Create helper class
-helper = Utils(interface_left_arm, interface_right_arm, interface_head)
+
+# Create self.helper class
 class RobotGUI(QMainWindow):
     def __init__(self):
         super().__init__()
+
+        self.interface_left_arm = MoveGroupInterface('monkey_left_arm')
+        self.interface_right_arm = MoveGroupInterface('monkey_right_arm')
+        self.interface_head = MoveGroupInterface('head')
+        self.helper = Utils(self.interface_left_arm, self.interface_right_arm, self.interface_head, self)
+
+        self.add_waypoint = False
+        self.save_waypoints = False
+        self.cont_waypoints = False
+
         self.initUI()
 
     def initUI(self):
@@ -25,8 +36,8 @@ class RobotGUI(QMainWindow):
         self.optionLabel = QLabel('Select an action:', self)
         self.optionCombo = QComboBox(self)
         self.optionCombo.addItem('Collect waypoints')
-        self.optionCombo.addItem('Load and edit saved waypoints')
-        self.optionCombo.addItem('Load a saved plan and execute it')
+        self.optionCombo.addItem('Load and edit waypoints')
+        self.optionCombo.addItem('Plan/Execute')
 
         # File Name Input
         self.fileNameLabel = QLabel('File name:', self)
@@ -64,15 +75,10 @@ class RobotGUI(QMainWindow):
         # Connect this button to your method for adding a waypoint
         self.addWaypointBtn.clicked.connect(self.addWaypoint)
 
-        self.waypointsList = QTextEdit(self)
-        self.waypointsList.setReadOnly(True)
-
         self.saveBtn = QPushButton('Save Waypoints', self)
         self.saveBtn.setEnabled(False)  # Disable the button initially
         self.contBtn = QPushButton('Continue Collecting Waypoints', self)
         self.contBtn.setEnabled(False)  # Disable the button initially
-        self.fileNameLabel = QLabel('File name:', self)
-        self.fileNameEdit = QLineEdit(self)
 
         # Connect this button to your method for saving waypoints
         self.saveBtn.clicked.connect(self.saveWaypoints)
@@ -82,64 +88,114 @@ class RobotGUI(QMainWindow):
         # Add widgets to the layout
         self.layout.addWidget(self.infoLabel)
         self.layout.addWidget(self.addWaypointBtn)
-        self.layout.addWidget(self.waypointsList)
+        self.layout.addWidget(self.contBtn)
         self.layout.addWidget(self.saveBtn)
-        self.layout.addWidget(self.fileNameLabel)
-        self.layout.addWidget(self.fileNameEdit)
+        # self.layout.addWidget(self.fileNameLabel)
+        # self.layout.addWidget(self.fileNameEdit)
 
     def setupPlanningUI(self):
         self.infoLabel = QLabel('Planning UI', self)
-
-        for widgetToRemove in [self.infoLabel, self.addWaypointBtn, self.waypointsList, self.saveBtn]:
+        # keepWidgets = [self.fileNameLabel, self.fileNameEdit, self.outputText]
+        # print(self.layout.children())
+        # removeWidgets = [widget for widget in self.layout.children() if widget not in keepWidgets]
+        removeWidgets = [self.optionLabel, self.optionCombo, self.confirmBtn]
+        for widgetToRemove in removeWidgets:
             self.layout.removeWidget(widgetToRemove)
             widgetToRemove.setParent(None)
 
+        self.loadWPBtn = QPushButton('Load Waypoints', self)
+        self.loadPlanBtn = QPushButton('Load Plan', self)
+
         self.planBtn = QPushButton('Plan Carthesian Path', self)
+        self.planBtn.setEnabled(False)
 
         self.saveBtn = QPushButton('Save Plan', self)
         self.saveBtn.setEnabled(False)  # Disable the button initially
 
         self.executeBtn = QPushButton('Execute Plan', self)
-        self.saveBtn.setEnabled(False)  # Disable the button initially
+        self.executeBtn.setEnabled(False)  # Disable the button initially
+
+        self.startBtn = QPushButton('Start', self)
+        self.startBtn.setEnabled(False)  # Disable the button initially
+        self.start = False
 
 
 
         # Connect this button to your method for saving waypoints
+        self.loadWPBtn.clicked.connect(self.loadWP)
+        self.loadPlanBtn.clicked.connect(self.loadPlan)
         self.planBtn.clicked.connect(self.plan)
         self.saveBtn.clicked.connect(self.savePlan)
         self.executeBtn.clicked.connect(self.executePlan)
+        self.startBtn.clicked.connect(self.startMovement)
 
+        self.layout.addWidget(self.loadWPBtn)
+        self.layout.addWidget(self.loadPlanBtn)
         self.layout.addWidget(self.planBtn)
         self.layout.addWidget(self.saveBtn)
         self.layout.addWidget(self.executeBtn)
+        self.layout.addWidget(self.startBtn)
+        # self.show()
+    def restoreMainUI(self):
+        for widgetToRemove in [self.infoLabel, self.addWaypointBtn, self.saveBtn, self.contBtn, self.fileNameEdit, self.fileNameLabel]:
+            self.layout.removeWidget(widgetToRemove)
+            widgetToRemove.setParent(None)
 
+        self.layout.addWidget(self.optionLabel)
+        self.layout.addWidget(self.optionCombo)
+        self.layout.addWidget(self.fileNameLabel)
+        self.layout.addWidget(self.fileNameEdit)
+        self.layout.addWidget(self.confirmBtn)
+        self.layout.addWidget(self.outputText)
     def addWaypoint(self):
         # Your logic for adding a waypoint
         self.add_waypoint = True
 
     def saveWaypoints(self):
         self.save_waypoints = True
+        self.restoreMainUI()
 
     def contWaypoints(self):
         self.cont_waypoints = True
 
-    def plan(self):
-        helper.plan = helper.CPP(helper.collected_pose_arrayLA, helper.collected_pose_arrayRA)
-        if helper.plan:
-            self.saveBtn.setEnabled(True)
+    def loadWP(self):
+        fileName = self.fileNameEdit.text()
+        if self.helper.loadWaypointsFromJSON(fileName):
+            self.planBtn.setEnabled(True)
+            self.helper.initial_wp_count = len(self.helper.ifaceLA.loaded_json_wpoints.poses) + 1
+
+    def loadPlan(self):
+        fileName = self.fileNameEdit.text()
+        self.planBtn.setEnabled(False)
+        if self.helper.load_plan(fileName):
             self.executeBtn.setEnabled(True)
+
+
+    def plan(self):
+        self.helper.plan = self.helper.CPP(self.helper.ifaceLA.loaded_json_wpoints, self.helper.ifaceRA.loaded_json_wpoints)
+        if self.helper.plan:
+            self.saveBtn.setEnabled(True)
+            # self.executeBtn.setEnabled(True)
         else:
             self.saveBtn.setEnabled(False)
-            self.executeBtn.setEnabled(False)
+            # self.executeBtn.setEnabled(False)
 
     def savePlan(self):
-        helper.save_plan(helper.plan, self.fileNameEdit.text())
+        self.helper.save_plan(self.helper.plan, self.fileNameEdit.text())
+        self.executeBtn.setEnabled(True)
         # self.saveBtn.setEnabled(False)
 
     def executePlan(self):
-        # helper.ifaceLA.move_group.execute(helper.plan,
+        # self.helper.ifaceLA.move_group.execute(helper.plan,
         #                                   wait=True)  # Waits until feedback from execution is received
-        helper.interact_with_monkey_listener(self.fileNameEdit.text())
+        thread = threading.Thread(target=self.helper.interact_with_monkey_listener)
+        thread.start()
+
+    def startMovement(self):
+        self.start = True
+        self.startBtn.setEnabled(False)
+
+
 
 
 
@@ -150,26 +206,36 @@ class RobotGUI(QMainWindow):
         action = self.optionCombo.currentText()
         fileName = self.fileNameEdit.text()
         if action == 'Collect waypoints':
+            self.helper.initial_wp_count = 1
             self.setupCollectWaypointsUI()
+            # time.sleep(5)
 
-            # Collect waypoints in gui
-            # collected_pose_arrayLA, collected_pose_arrayRA, collected_pose_arrayH = helper.collect_wpoints(1)
-            helper.collected_pose_arrayLA, helper.collected_pose_arrayRA = helper.collect_wpoints(1, self)
+            # # Collect waypoints in gui
+            # self.helper.collected_pose_arrayLA, self.helper.collected_pose_arrayRA = self.helper.collect_wpoints(1)
 
+            thread = threading.Thread(target=self.helper.collect_wpoints)
+            thread.start()
+            #
+            # self.setupPlanningUI()
+            # # Query save
+            #
+            # self.interface_left_arm.markerArrayPub.publish(self.interface_left_arm.markerArray)
+            # self.interface_right_arm.markerArrayPub.publish(self.interface_right_arm.markerArray)
+            # self.interface_head.markerArrayPub.publish(self.interface_head.markerArray)
+
+
+        elif action == 'Load and edit waypoints':
+            if self.helper.loadWaypointsFromJSON(fileName):
+
+                self.helper.initial_wp_count = len(self.helper.ifaceLA.loaded_json_wpoints.poses) + 1
+                self.setupCollectWaypointsUI()
+                thread = threading.Thread(target=self.helper.collect_wpoints)
+                thread.start()
+
+        elif action == 'Plan/Execute':
             self.setupPlanningUI()
-            # Query save
-
-            interface_left_arm.markerArrayPub.publish(interface_left_arm.markerArray)
-            interface_right_arm.markerArrayPub.publish(interface_right_arm.markerArray)
-            interface_head.markerArrayPub.publish(interface_head.markerArray)
-
-
-        elif action == 'Load and edit saved waypoints':
-            # Query json file name, load poseArray, query appending new poses
-            helper.loadWaypointsFromJSON()
-        elif action == 'Load a saved plan and execute it':
             # Load a saved plan and execute it
-            helper.interact_with_monkey_listener()
+
 
         # Update the output text with the selected option and file name (for demonstration)
         self.outputText.append(f"Action: {action}, File Name: {fileName}")
@@ -180,7 +246,10 @@ class RobotGUI(QMainWindow):
 
 
 if __name__ == '__main__':
+    # Create interface to Moveit:RobotCommander (move-group python interface)
+
     app = QApplication(sys.argv)
     gui = RobotGUI()
+
     gui.show()
     sys.exit(app.exec_())

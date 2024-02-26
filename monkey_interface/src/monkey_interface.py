@@ -57,7 +57,10 @@ except:  # For Python 2 compatibility
 
     def dist(p, q):
         return sqrt(sum((p_i - q_i) ** 2.0 for p_i, q_i in zip(p, q)))
-EEF_STEP_SIZE = 0.01 #TODO TEST
+EEF_STEP_SIZE = 10 #TODO TEST
+
+current_file_path = os.path.abspath(__file__)
+path_to_current_dir = os.path.dirname(current_file_path)
 # imports done =============================================================================================
 
 # Convenience functions ====================================================================================
@@ -110,6 +113,7 @@ class MoveGroupInterface(object):
         self.lrimpa_max_size = 3 # Max size of last recorded IM pose array
         self.lrimp_count = 0 # Counter for last recorded IM pose
         self.imp_buffer = []
+        self.initial_wp_count = 1
 
         # Setup moveit_commander and dependent variables (robot, scene)
         moveit_commander.roscpp_initialize(sys.argv)
@@ -124,7 +128,8 @@ class MoveGroupInterface(object):
         
         # Setup move_group handle
         move_group = moveit_commander.MoveGroupCommander(planning_group_name)
-        move_group.set_planning_time(5.0) # This sets a time limit for the planning of trajectories
+        move_group.set_planning_time(15.0) # This sets a time limit for the planning of trajectories
+        move_group.set_num_planning_attempts(30) # Number of planning attempts
         move_group.set_max_velocity_scaling_factor(1.0) # Scaler for execution of trajectories
         move_group.set_max_acceleration_scaling_factor(1.0)
         move_group.set_goal_position_tolerance(0.001) # Set position tolerance
@@ -318,22 +323,22 @@ class Utils:
         self.ifaceLA = interface_left_arm
         self.ifaceRA = inteface_right_arm
         # self.ifaceH = interface_head
-        self.gui = self.gui
+        self.gui = gui
 
     # Let user collect an arbitrary number of waypoints in self.gui, return the collected waypoints
 
-    def collect_wpoints(self, initial_wp_count):
-        wcounter = initial_wp_count  # For the shell interaction a waypoint counter is needed. An initial_count != 0 means that we will append new poses to a poseArray loaded form a json file
+    def collect_wpoints(self):
+        wcounter = self.initial_wp_count  # For the shell interaction a waypoint counter is needed. An initial_count != 0 means that we will append new poses to a poseArray loaded form a json file
         collecting_WP = True
         wp_ns = "collected_waypoint"
-        col_posesLA = PoseArray()  # Create empty poseArray
-        col_posesRA = PoseArray()
+        self.col_posesLA = PoseArray()  # Create empty poseArray
+        self.col_posesRA = PoseArray()
         # col_posesH = PoseArray()
         # If initial_wp_count is greater 1 this means we are not populating an empty poseArray, but instead appending new poses to an existing poseArray
-        if initial_wp_count > 1:
+        if self.initial_wp_count > 1:
             self.appending = True
-            col_posesLA = self.ifaceLA.loaded_json_wpoints
-            col_posesRA = self.ifaceRA.loaded_json_wpoints
+            self.col_posesLA = self.ifaceLA.loaded_json_wpoints
+            self.col_posesRA = self.ifaceRA.loaded_json_wpoints
             wp_ns = "appended_waypoints"
         # Collect as many poses as the user wants
         while collecting_WP == True:
@@ -341,7 +346,7 @@ class Utils:
             # Try to get a valid wpoint
             while not wpoint_valid:
                 if self.gui:
-                    self.gui.addWaypointBtn.setText("Add <b>Left Arm</b> Waypoint")
+                    self.gui.addWaypointBtn.setText("Add Left Arm Waypoint")
                     self.gui.addWaypointBtn.setEnabled(True)
                     while not self.gui.add_waypoint:
                         pass
@@ -358,7 +363,7 @@ class Utils:
                 wpoint_valid = self.ifaceLA.isValid(wLA)
                 if wpoint_valid:
                     # Plan a path
-                    (planLA, suc_fracLA) = self.ifaceLA.move_group.compute_cartesian_path(col_posesLA.poses + [wLA], float(EEF_STEP_SIZE),
+                    (planLA, suc_fracLA) = self.ifaceLA.move_group.compute_cartesian_path(self.col_posesLA.poses + [wLA], float(EEF_STEP_SIZE),
                                                                                  0.0)
                     if suc_fracLA == 1.0:
                         break
@@ -393,7 +398,7 @@ class Utils:
                 wpoint_valid = self.ifaceRA.isValid(wRA)
                 if wpoint_valid:
                     # Plan a path
-                    (planRA, suc_fracRA) = self.ifaceRA.move_group.compute_cartesian_path(col_posesRA.poses + [wRA], float(EEF_STEP_SIZE),
+                    (planRA, suc_fracRA) = self.ifaceRA.move_group.compute_cartesian_path(self.col_posesRA.poses + [wRA], float(EEF_STEP_SIZE),
                                                                                  0.0)
                     if suc_fracRA == 1.0:
                         break
@@ -447,8 +452,8 @@ class Utils:
                 #     else:
                 #        print(out)
 
-            col_posesLA.poses.append(wLA)
-            col_posesRA.poses.append(wRA)
+            self.col_posesLA.poses.append(wLA)
+            self.col_posesRA.poses.append(wRA)
             # col_posesH.poses.append(wH)
             # Append collected wpoint to wpoints stored in iface
             self.ifaceLA.wpoints.append(wLA)
@@ -472,9 +477,11 @@ class Utils:
                 while True:
                     if self.gui.save_waypoints:
                         filename = self.gui.fileNameEdit.text()
-                        self.save_WP(col_posesLA, col_posesRA, filename)  # , col_posesH)
-                        collecting_WP = False
-                        break
+                        print("Waypoints saved to " + filename)
+                        # self.gui.outputText.append("Waypoints saved to " + filename)
+                        self.save_WP(self.col_posesLA, self.col_posesRA, filename)  # , col_posesH)
+                        # collecting_WP = False
+                        return self.col_posesLA, self.col_posesRA #, col_posesH
                     elif self.gui.cont_waypoints:
                         break
                 self.gui.save_waypoints = False
@@ -486,11 +493,10 @@ class Utils:
                 if cont != "":
                     collecting_WP = False
 
-        return col_posesLA, col_posesRA #, col_posesH
+        return self.col_posesLA, self.col_posesRA #, col_posesH
     # Query saving of poseArray from user, if desired query name of json file to save poseArray to. The file name without .json
     def save_WP(self,paLA, paRA, filename): #, paH):
         # Consctruct path name
-        path_to_current_dir = str(pathlib.Path().resolve()) # The path gets saved in the moveit workspace top folder
         os.makedirs(path_to_current_dir + "/saved_waypoints", exist_ok=True)
         path_nameLA = path_to_current_dir + "/saved_waypoints/" + filename + '_LA.json'
         path_nameRA = path_to_current_dir + "/saved_waypoints/" + filename + '_RA.json'
@@ -507,12 +513,25 @@ class Utils:
         json_plan = json_message_converter.convert_ros_message_to_json(plan)
 
         # Consctruct path name
-        path_to_current_dir = str(pathlib.Path().resolve())  # The path gets saved in the moveit workspace top folder
         os.makedirs(path_to_current_dir + "/saved_plans", exist_ok=True)
-        path_name = path_to_current_dir + "/saved_plans/" + filename + '_LA.json'
+        path_name = path_to_current_dir + "/saved_plans/" + filename + '.json'
         # Dump json data into json file
         with open(path_name, 'w+') as f:
             json.dump(json_plan, f)
+
+    def load_plan(self, filename):
+        path_name = path_to_current_dir + "/saved_plans/" + filename + '.json'
+        if os.path.exists(path_name):
+            return True
+        else:
+            print("File does not exist, try again.")
+            return False
+
+            # with open(path_name, 'rb') as f:
+            #     jsonOjbect = json.load(f)
+            #     plan = json_message_converter.convert_json_to_ros_message('moveit_msgs/RobotTrajectory', jsonOjbect)
+            #     return plan
+
 
     # Create three hardcoded waypoints
     # def pdExampleWaypoints(self):
@@ -611,15 +630,13 @@ class Utils:
 
 
     # Query the user for the name of json file containing a poseArray, then query saving of cart. path, then query execution of cart. path
-    def loadWaypointsFromJSON(self):
-        path_to_current_dir = str(pathlib.Path().resolve()) # The path gets loaded from the moveit workspace top folder
+    def loadWaypointsFromJSON(self, file_name):
         saved_files = os.listdir(path_to_current_dir + "/saved_waypoints")
         saved_files = list(set([f[:-8] for f in saved_files]))
         print("Please input name of json file to load. Options: ", saved_files)
-        file_name = input()
-        while file_name not in saved_files:
+        if file_name not in saved_files:
             print("File does not exist, try again. Options: ", saved_files)
-            file_name = input()
+            return False
 
         path_nameLA = path_to_current_dir + "/saved_waypoints/" + file_name + '_LA.json'
         path_nameRA = path_to_current_dir + "/saved_waypoints/" + file_name + '_RA.json'
@@ -652,28 +669,14 @@ class Utils:
         #     self.ifaceH.markerArrayPub.publish(self.ifaceH.markerArray)
         if self.ifaceLA.loaded_json_wpoints == None:
             print("No waypoints were loaded!")
-            return None
+            return False
         else:
             print("Waypoints were loaded and are being displayed")
-        # Query if user wishes to continue
-        question = "Do you want to add new waypoints to the file "+file_name+" ? [Enter for yes, any key for no]"
-        edit_ans = input(question)
-        if edit_ans == "":
-            # If a poseArray was loaded, give these waypoints to the collect_wpoints method,
-            # which will append new waypoints and return a poseArray with all old poses + all new poses
-            existing_wpoints = self.ifaceLA.loaded_json_wpoints
-            # The coutner counting the existing waypoints in the waypoints array is incremented by one,
-            #since the counter refers to the index refers to the next waypoint to be added
-            n = len(existing_wpoints.poses) + 1
-            col_posesLA, col_posesRA = self.collect_wpoints(n) #, col_posesH
-            if col_posesLA != None:
-                # Query saving of waypoints
-                self.querySave(col_posesLA, col_posesRA) #, col_posesH)
-            else:
-                print("No wpoints addded.")
+            return True
 
-        # Query decision to plan car. path
-        self.queryCPP(col_posesLA, col_posesRA) #, col_posesH)
+
+
+
 
     # Query a valid 'mode' from the user, where mode is one of the scripts functionalities:
     # {single pose goal, hardcoded trajectory,  collecting waypoints, loading and editing waypoints, exit}
@@ -709,8 +712,8 @@ class Utils:
 
 
 
-    def interact_with_monkey_listener(self, filename, ssh_host='10.42.0.2', ssh_port='22', ssh_user='rm', ssh_key_path='~/.ssh/id_rsa',
-                                    remote_script_path='~/monkey_ws/src/monkey_listener/src/joint_control_listener.py', interpolation_steps=10):
+    def interact_with_monkey_listener(self, ssh_host='10.42.0.2', ssh_port=22, ssh_user='rm', ssh_key_path='/home/robot-user/.ssh/id_rsa',
+                                    remote_script_path='/home/rm/ws_moveit/src/monkey_listener/src/joint_control_listener.py', interpolation_steps=10):
         """
         Interact with a remote script using SSH key for authentication.
 
@@ -720,16 +723,16 @@ class Utils:
         :param ssh_key_path: String, the path to the SSH private key file.
         :param remote_script_path: String, the path to the remote script that requires interaction.
         """
-
+        filename = self.gui.fileNameEdit.text()
         # Initialize SSH client
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
         # Load SSH key
-        ssh_key = paramiko.RSAKey.from_private_key_file(ssh_key_path)
+        # ssh_key = paramiko.RSAKey.from_private_key_file(ssh_key_path)
 
         # Connect to the remote machine
-        ssh.connect(hostname=ssh_host, port=ssh_port, username=ssh_user, pkey=ssh_key)
+        ssh.connect(hostname=ssh_host, port=ssh_port, username=ssh_user)#, pkey=ssh_key)
 
         # Start an interactive shell session
         shell = ssh.invoke_shell()
@@ -739,22 +742,31 @@ class Utils:
                 time.sleep(wait_time)
                 if shell.recv_ready():
                     output = shell.recv(4096).decode()
+                    print(output, '\n')
                     if 'ready_for_execution' in output:
                         break
 
         # copy the file to the remote machine
         sftp = ssh.open_sftp()
-        path_to_current_dir = str(pathlib.Path().resolve())
-        sftp.put(join(path_to_current_dir, 'saved_plans', filename), os.path.dirname(remote_script_path))
+        sftp.put(join(path_to_current_dir, 'saved_plans', f'{filename}.json'), join(os.path.dirname(remote_script_path),
+                                                                                    'saved_plans', f'{filename}.json'))
         sftp.close()
 
         # Start the remote script
         print(shell.send(f'python3 {remote_script_path} --from_json True --interpolation_steps {interpolation_steps} --filename {filename}\n'))
         wait_until_ready(2)
+        self.gui.startBtn.setEnabled(True)
 
         # Interact with the script
-        input_cmd = input("Press [Enter] to execute the trajectory")
-        print(shell.send(f'{input_cmd}\n'))
+        while self.gui.start == False:
+            pass
+        self.gui.start = False
+
+        print(shell.send('start\n'))
+
+        time.sleep(1)
+        output = shell.recv(4096).decode()
+        print(output, '\n')
 
         # Close the SSH connection
         ssh.close()

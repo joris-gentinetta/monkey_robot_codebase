@@ -48,22 +48,25 @@ kit = ServoKit(channels=16, frequency=333)
 
 # Mapping from joint name to index in joint state message
 MAPPING = {
-    "NH": 0,
-    "NF": 1,
-    "RSF": 2,
-    "RSL": 3,
-    "RSH": 4,
-    "REB": 5,
-    "RW": 6,
-    "RH": 7,
-    "LSF": 8,
-    "LSL": 9,
-    "LSH": 10,
-    "LEB": 11,
-    "LW": 12,
-    "LH": 13
+    # "NH": 0,
+    # "NF": 1,
+    "RSF": 'R_Shoulder_Fro_Rot_Joint',
+    "RSL": 'R_Shoulder_Lat_Joint',
+    "RSH": 'R_Shoulder_Hor_Joint',
+    "REB": 'R_Ellbow_Joint',
+    "RW": 'R_Wrist_Joint',
+    "RH": 'R_Hand_Joint',
+    "LSF": 'L_Shoulder_Fro_Joint',
+    "LSL": 'L_Shoulder_Lat_Joint',
+    "LSH": 'L_Shoulder_Hor_Joint',
+    "LEB": 'L_Ellbow_Joint',
+    "LW": 'L_Wrist_Joint',
+    "LH": 'L_Hand_Joint'
 }
 inverted_mapping = {value: key for key, value in MAPPING.items()}
+
+current_file_path = os.path.abspath(__file__)
+path_to_current_dir = os.path.dirname(current_file_path)
 # Imports done =============================================================================================
 
 
@@ -183,7 +186,6 @@ class Body:
 # Body class done ================================================================================================
 
 def loadPlanFromJSON(file_name):
-    path_to_current_dir = str(pathlib.Path().resolve()) # The path gets loaded from the moveit workspace top folder
     saved_files = os.listdir(path_to_current_dir + "/saved_plans")
     saved_files = list(set([f.split('.')[0] for f in saved_files]))
     path_name = path_to_current_dir + "/saved_plans/" + file_name + '.json'
@@ -212,22 +214,39 @@ if __name__ == '__main__':
     # Init node
     parser = argparse.ArgumentParser(description='Robot execution node')
     parser.add_argument('--from_json', default=False, required=False, help='Load plan from json file')
-    parser.add_argument('--interpolation_steps', default=10, required=False, help='How many steps between waypoints')
+    parser.add_argument('--interpolation_steps', type=int, default=10, required=False, help='How many steps between waypoints')
     parser.add_argument('--filename', default=None, required=False, help='Name of the file to load')
     args = parser.parse_args()
 
     if args.from_json:
         body = Body(args.from_json)
         jsonObject = loadPlanFromJSON(args.filename)
-        for point in jsonObject.points:
-            for joint_id, position in enumerate(point.positions):
-                joint_name = inverted_mapping[joint_id]
-                body.joints[joint_name].add_to_trajectory(position, args.interpolation_steps)
-        execute = input("Press enter to start the trajectory")
-        if execute == '':
+        jsonDict = json.loads(jsonObject)
+        joint_names = jsonDict['joint_trajectory']['joint_names']
+        for point in jsonDict['joint_trajectory']['points']:
+            for joint_id, position in enumerate(point['positions']):
+                joint_name = joint_names[joint_id]
+                translated_name = inverted_mapping[joint_name]
+                body.joints[translated_name].add_to_trajectory(position, int(args.interpolation_steps))
+
+        #todo:
+        max_len = 0
+        for joint in body.joints.values():
+            max_len = max(max_len, len(joint.trajectory))
+        for joint in body.joints.values():
+            if len(joint.trajectory) < max_len:
+                joint.trajectory = joint.trajectory + [joint.trajectory[-1]]*(max_len-len(joint.trajectory))
+
+        print('ready_for_execution')
+        execute = input()
+        print(f'####################{execute}####################')
+        if execute == 'start':
+            print(f'starting trajectory with {len(body.joints["LH"].trajectory)} steps')
             for i in range(len(body.joints['LH'].trajectory)):
-                for joint in body.joints.values():
+                for name, joint in body.joints.items():
                     joint.servo.angle = joint.trajectory[i]
+                    print(joint.trajectory)
+                    print(f'{joint.name} at {joint.servo.angle}')
 
     else:
         rospy.init_node("monkey_listener")
