@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
 import sys
-import time
 import threading
 
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QPushButton, QVBoxLayout,
                              QWidget, QTextEdit, QLineEdit, QLabel, QComboBox, QHBoxLayout)
-from monkey_interface import MoveGroupInterface, Utils
 
+from monkey_interface import MoveGroupInterface, Utils
 
 
 # Create self.helper class
@@ -106,7 +105,6 @@ class RobotGUI(QMainWindow):
         self.saveBtn.clicked.connect(self.saveWaypoints)
         self.contBtn.clicked.connect(self.contWaypoints)
 
-
         # Add widgets to the layout
         self.layout.addWidget(self.infoLabel)
         self.layout.addWidget(self.addWaypointBtn)
@@ -114,7 +112,6 @@ class RobotGUI(QMainWindow):
         self.layout.addWidget(self.fileNameLayout)
         self.layout.addWidget(self.saveBtn)
         self.layout.addWidget(self.outputText)
-
 
     def setupPlanningUI(self):
 
@@ -141,8 +138,6 @@ class RobotGUI(QMainWindow):
         self.startBtn.setEnabled(False)  # Disable the button initially
         self.start = False
 
-
-
         # Connect this button to your method for saving waypoints
         self.loadWPBtn.clicked.connect(self.loadWP)
         self.loadPlanBtn.clicked.connect(self.loadPlan)
@@ -160,6 +155,7 @@ class RobotGUI(QMainWindow):
         self.layout.addWidget(self.executeBtn)
         self.layout.addWidget(self.startBtn)
         # self.show()
+
     def restoreMainUI(self):
         for widgetToRemove in self.layout.children():
             self.layout.removeWidget(widgetToRemove)
@@ -171,6 +167,7 @@ class RobotGUI(QMainWindow):
         self.layout.addWidget(self.fileNameEdit)
         self.layout.addWidget(self.confirmBtn)
         self.layout.addWidget(self.outputText)
+
     def addWaypoint(self):
         # Your logic for adding a waypoint
         self.add_waypoint = True
@@ -201,9 +198,9 @@ class RobotGUI(QMainWindow):
         if self.helper.load_plan(fileName):
             self.executeBtn.setEnabled(True)
 
-
     def plan(self):
-        self.helper.plan = self.helper.CPP(self.helper.ifaceLA.loaded_json_wpoints, self.helper.ifaceRA.loaded_json_wpoints)
+        self.helper.plan = self.helper.CPP(self.helper.ifaceLA.loaded_json_wpoints,
+                                           self.helper.ifaceRA.loaded_json_wpoints)
         if self.helper.plan:
             self.saveBtn.setEnabled(True)
             # self.executeBtn.setEnabled(True)
@@ -228,7 +225,6 @@ class RobotGUI(QMainWindow):
         self.start = True
         self.startBtn.setEnabled(False)
 
-
     def confirmAction(self):
         # Get the selected action and file name
         action = self.optionCombo.currentText()
@@ -250,7 +246,6 @@ class RobotGUI(QMainWindow):
 
         elif action == 'Load and edit waypoints':
             if self.helper.loadWaypointsFromJSON(fileName):
-
                 self.helper.initial_wp_count = len(self.helper.ifaceLA.loaded_json_wpoints.poses) + 1
                 self.setupCollectWaypointsUI()
                 thread = threading.Thread(target=self.helper.collect_wpoints)
@@ -260,13 +255,10 @@ class RobotGUI(QMainWindow):
             self.setupPlanningUI()
             # Load a saved plan and execute it
 
-
         # Update the output text with the selected option and file name (for demonstration)
         self.outputText.append(f"Action: {action}, File Name: {fileName}")
         # Here, add your logic to handle the selected action and file name,
         # such as invoking functions from your script or setting up further GUI elements.
-
-
 
 
 if __name__ == '__main__':

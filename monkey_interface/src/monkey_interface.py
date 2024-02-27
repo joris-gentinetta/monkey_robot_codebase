@@ -775,67 +775,69 @@ class Utils:
 
 
 def main():
-    try:
-        # Create interface to Moveit:RobotCommander (move-group python interface)   
-        interface_left_arm = MoveGroupInterface('monkey_left_arm')
-        interface_right_arm = MoveGroupInterface('monkey_right_arm')
-        interface_head = MoveGroupInterface('head')
-
-        # Create helper class
-        helper = Utils(interface_left_arm, interface_right_arm, interface_head)
-
-        # Greet user
-        helper.greet()
-
-        # Query user for a valid mode
-        mode = helper.queryValidMode()
-
-        if mode == 1: # Let user collect waypoints in self.gui, query save and finally query execution
-
-            # Collect waypoints in self.gui
-            # collected_pose_arrayLA, collected_pose_arrayRA, collected_pose_arrayH = helper.collect_wpoints(1)
-            collected_pose_arrayLA, collected_pose_arrayRA = helper.collect_wpoints(1)
-            # Query save
-            helper.querySave(collected_pose_arrayLA, collected_pose_arrayRA)  # , collected_pose_arrayH)
-            # Make sure that all user set waypoints are being displayed
-            interface_left_arm.markerArrayPub.publish(interface_left_arm.markerArray)
-            interface_right_arm.markerArrayPub.publish(interface_right_arm.markerArray)
-            interface_head.markerArrayPub.publish(interface_head.markerArray)
-
-            # Query decision to plan car. path
-            # helper.queryCPP(collected_pose_arrayLA, collected_pose_arrayRA, collected_pose_arrayH)
-            plan = helper.queryCPP(collected_pose_arrayLA, collected_pose_arrayRA)
-            if plan:
-                # Query decision to execute cart. plan
-                exec_dec = input("Do you want to execute the cart. plan? [Enter for yes, any key for no]")
-                if exec_dec == "":
-                    helper.ifaceLA.move_group.execute(plan,
-                                                    wait=True)  # Waits until feedback from execution is received
-                ans = input("Do you want to save the plan? [yes | Enter]")
-                if ans != "":
-                    filename = input("Please specify an (unused) filename without file type: ")
-                    helper.save_plan(plan, filename)
-        elif mode == 2:  # Load waypoints from json, potentially edit them
-            # Query json file name, load poseArray, query appending new poses     
-            helper.loadWaypointsFromJSON()
-        elif mode == 3:  # Load a saved plan and execute it
-            # Load a saved plan and execute it
-            helper.interact_with_monkey_listener()
-
-        elif mode == 4: # Exit
-            pass
-
-        else:
-            print("Unrecognized mode")
-
-        # Before exiting
-        print("Exiting")
-
-        
-    except rospy.ROSInterruptException:
-        return
-    except KeyboardInterrupt:
-        return
+    pass
+    # try:
+    #     # TODO  adapt CLI to GUI
+    #     # Create interface to Moveit:RobotCommander (move-group python interface)
+    #     interface_left_arm = MoveGroupInterface('monkey_left_arm')
+    #     interface_right_arm = MoveGroupInterface('monkey_right_arm')
+    #     interface_head = MoveGroupInterface('head')
+    #
+    #     # Create helper class
+    #     helper = Utils(interface_left_arm, interface_right_arm, interface_head)
+    #
+    #     # Greet user
+    #     helper.greet()
+    #
+    #     # Query user for a valid mode
+    #     mode = helper.queryValidMode()
+    #
+    #     if mode == 1: # Let user collect waypoints in self.gui, query save and finally query execution
+    #
+    #         # Collect waypoints in self.gui
+    #         # collected_pose_arrayLA, collected_pose_arrayRA, collected_pose_arrayH = helper.collect_wpoints(1)
+    #         collected_pose_arrayLA, collected_pose_arrayRA = helper.collect_wpoints(1)
+    #         # Query save
+    #         helper.querySave(collected_pose_arrayLA, collected_pose_arrayRA)  # , collected_pose_arrayH)
+    #         # Make sure that all user set waypoints are being displayed
+    #         interface_left_arm.markerArrayPub.publish(interface_left_arm.markerArray)
+    #         interface_right_arm.markerArrayPub.publish(interface_right_arm.markerArray)
+    #         interface_head.markerArrayPub.publish(interface_head.markerArray)
+    #
+    #         # Query decision to plan car. path
+    #         # helper.queryCPP(collected_pose_arrayLA, collected_pose_arrayRA, collected_pose_arrayH)
+    #         plan = helper.queryCPP(collected_pose_arrayLA, collected_pose_arrayRA)
+    #         if plan:
+    #             # Query decision to execute cart. plan
+    #             exec_dec = input("Do you want to execute the cart. plan? [Enter for yes, any key for no]")
+    #             if exec_dec == "":
+    #                 helper.ifaceLA.move_group.execute(plan,
+    #                                                 wait=True)  # Waits until feedback from execution is received
+    #             ans = input("Do you want to save the plan? [yes | Enter]")
+    #             if ans != "":
+    #                 filename = input("Please specify an (unused) filename without file type: ")
+    #                 helper.save_plan(plan, filename)
+    #     elif mode == 2:  # Load waypoints from json, potentially edit them
+    #         # Query json file name, load poseArray, query appending new poses
+    #         helper.loadWaypointsFromJSON()
+    #     elif mode == 3:  # Load a saved plan and execute it
+    #         # Load a saved plan and execute it
+    #         helper.interact_with_monkey_listener()
+    #
+    #     elif mode == 4: # Exit
+    #         pass
+    #
+    #     else:
+    #         print("Unrecognized mode")
+    #
+    #     # Before exiting
+    #     print("Exiting")
+    #
+    #
+    # except rospy.ROSInterruptException:
+    #     return
+    # except KeyboardInterrupt:
+    #     return
 
 
 if __name__ == "__main__":
