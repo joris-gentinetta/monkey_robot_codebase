@@ -5,7 +5,7 @@ import time
 import threading
 
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QPushButton, QVBoxLayout,
-                             QWidget, QTextEdit, QLineEdit, QLabel, QComboBox)
+                             QWidget, QTextEdit, QLineEdit, QLabel, QComboBox, QHBoxLayout)
 from monkey_interface import MoveGroupInterface, Utils
 
 
@@ -39,9 +39,20 @@ class RobotGUI(QMainWindow):
         self.optionCombo.addItem('Load and edit waypoints')
         self.optionCombo.addItem('Plan/Execute')
 
-        # File Name Input
+        # File Name Input setup with QHBoxLayout
+        self.fileNameLayout = QHBoxLayout()  # Horizontal layout for label and edit
         self.fileNameLabel = QLabel('File name:', self)
         self.fileNameEdit = QLineEdit(self)
+
+        # Initially hide if necessary
+        self.fileNameLabel.setVisible(False)
+        self.fileNameEdit.setVisible(False)
+
+        # Add the label and edit to the horizontal layout
+        self.fileNameLayout.addWidget(self.fileNameLabel)
+        self.fileNameLayout.addWidget(self.fileNameEdit)
+        # Connect the ComboBox change signal to the slot
+        self.optionCombo.currentIndexChanged.connect(self.updateUIBasedOnSelection)
 
         # Confirm Button
         self.confirmBtn = QPushButton('Confirm', self)
@@ -54,8 +65,7 @@ class RobotGUI(QMainWindow):
         # Layout Setup
         self.layout.addWidget(self.optionLabel)
         self.layout.addWidget(self.optionCombo)
-        self.layout.addWidget(self.fileNameLabel)
-        self.layout.addWidget(self.fileNameEdit)
+        self.layout.addWidget(self.fileNameLayout)
         self.layout.addWidget(self.confirmBtn)
         self.layout.addWidget(self.outputText)
 
@@ -63,10 +73,22 @@ class RobotGUI(QMainWindow):
         self.mainWidget.setLayout(self.layout)
         self.setCentralWidget(self.mainWidget)
 
+    def updateUIBasedOnSelection(self):
+        # Check the current selection
+        if self.optionCombo.currentText() == 'Load and edit waypoints':
+            # Show the FileName Label and Edit
+            self.fileNameLabel.show()
+            self.fileNameEdit.show()
+        else:
+            # Hide the FileName Label and Edit
+            self.fileNameLabel.hide()
+            self.fileNameEdit.hide()
+
     def setupCollectWaypointsUI(self):
-        for widgetToRemove in [self.optionLabel, self.optionCombo, self.confirmBtn]:
+        widgets = self.layout.children()
+        for widgetToRemove in widgets:
             self.layout.removeWidget(widgetToRemove)
-            widgetToRemove.setParent(None)
+            # widgetToRemove.setParent(None)
 
         # Setup the UI for collecting waypoints
         self.infoLabel = QLabel('Move the robot to desired positions and press "Add Waypoint"', self)
@@ -89,19 +111,19 @@ class RobotGUI(QMainWindow):
         self.layout.addWidget(self.infoLabel)
         self.layout.addWidget(self.addWaypointBtn)
         self.layout.addWidget(self.contBtn)
+        self.layout.addWidget(self.fileNameLayout)
         self.layout.addWidget(self.saveBtn)
-        # self.layout.addWidget(self.fileNameLabel)
-        # self.layout.addWidget(self.fileNameEdit)
+        self.layout.addWidget(self.outputText)
+
 
     def setupPlanningUI(self):
-        self.infoLabel = QLabel('Planning UI', self)
-        # keepWidgets = [self.fileNameLabel, self.fileNameEdit, self.outputText]
-        # print(self.layout.children())
-        # removeWidgets = [widget for widget in self.layout.children() if widget not in keepWidgets]
-        removeWidgets = [self.optionLabel, self.optionCombo, self.confirmBtn]
+
+        removeWidgets = self.layout.children()
         for widgetToRemove in removeWidgets:
             self.layout.removeWidget(widgetToRemove)
             widgetToRemove.setParent(None)
+
+        self.infoLabel = QLabel('Planning UI', self)
 
         self.loadWPBtn = QPushButton('Load Waypoints', self)
         self.loadPlanBtn = QPushButton('Load Plan', self)
@@ -129,6 +151,8 @@ class RobotGUI(QMainWindow):
         self.executeBtn.clicked.connect(self.executePlan)
         self.startBtn.clicked.connect(self.startMovement)
 
+        self.layout.addWidget(self.infoLabel)
+        self.layout.addWidget(self.fileNameLayout)
         self.layout.addWidget(self.loadWPBtn)
         self.layout.addWidget(self.loadPlanBtn)
         self.layout.addWidget(self.planBtn)
@@ -137,10 +161,10 @@ class RobotGUI(QMainWindow):
         self.layout.addWidget(self.startBtn)
         # self.show()
     def restoreMainUI(self):
-        for widgetToRemove in [self.infoLabel, self.addWaypointBtn, self.saveBtn, self.contBtn, self.fileNameEdit, self.fileNameLabel]:
+        for widgetToRemove in self.layout.children():
             self.layout.removeWidget(widgetToRemove)
-            widgetToRemove.setParent(None)
-
+            # widgetToRemove.setParent(None)
+        # self.layout.addWidget(self.infoLabel)
         self.layout.addWidget(self.optionLabel)
         self.layout.addWidget(self.optionCombo)
         self.layout.addWidget(self.fileNameLabel)
@@ -152,13 +176,20 @@ class RobotGUI(QMainWindow):
         self.add_waypoint = True
 
     def saveWaypoints(self):
-        self.save_waypoints = True
-        self.restoreMainUI()
+        if self.fileNameEdit.text() == '':
+            self.outputText.append('Please enter a file name')
+        else:
+            self.save_waypoints = True
+            self.restoreMainUI()
 
     def contWaypoints(self):
         self.cont_waypoints = True
 
     def loadWP(self):
+        self.planBtn.setEnabled(False)
+        self.executeBtn.setEnabled(False)
+        self.saveBtn.setEnabled(False)
+        self.startBtn.setEnabled(False)
         fileName = self.fileNameEdit.text()
         if self.helper.loadWaypointsFromJSON(fileName):
             self.planBtn.setEnabled(True)
@@ -181,9 +212,11 @@ class RobotGUI(QMainWindow):
             # self.executeBtn.setEnabled(False)
 
     def savePlan(self):
-        self.helper.save_plan(self.helper.plan, self.fileNameEdit.text())
-        self.executeBtn.setEnabled(True)
-        # self.saveBtn.setEnabled(False)
+        if self.fileNameEdit.text() == '':
+            self.outputText.append('Please enter a file name')
+        else:
+            self.helper.save_plan(self.helper.plan, self.fileNameEdit.text())
+            self.executeBtn.setEnabled(True)
 
     def executePlan(self):
         # self.helper.ifaceLA.move_group.execute(helper.plan,
@@ -196,11 +229,6 @@ class RobotGUI(QMainWindow):
         self.startBtn.setEnabled(False)
 
 
-
-
-
-
-
     def confirmAction(self):
         # Get the selected action and file name
         action = self.optionCombo.currentText()
@@ -208,10 +236,6 @@ class RobotGUI(QMainWindow):
         if action == 'Collect waypoints':
             self.helper.initial_wp_count = 1
             self.setupCollectWaypointsUI()
-            # time.sleep(5)
-
-            # # Collect waypoints in gui
-            # self.helper.collected_pose_arrayLA, self.helper.collected_pose_arrayRA = self.helper.collect_wpoints(1)
 
             thread = threading.Thread(target=self.helper.collect_wpoints)
             thread.start()
