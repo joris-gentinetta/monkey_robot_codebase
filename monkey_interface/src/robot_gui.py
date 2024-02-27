@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+'''
+Author: Joris Gentinetta
+E-Mail: jorisg@ethz.ch
+Last changed: 27.2.24
+'''
 
 import sys
 import threading

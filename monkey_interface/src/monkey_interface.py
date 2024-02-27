@@ -80,11 +80,7 @@ class MoveGroupInterface(object):
         # The anonymous flag renders the existence of multiple move_group nodes possible, which would otherwise cause a crash.
         rospy.init_node("move_group_interface", anonymous=True)
         self.robot = moveit_commander.RobotCommander()
-        scene = moveit_commander.PlanningSceneInterface()
 
-        # Query planning group from user
-        # target_planning_group_name = "monkey_left_arm" # Or input("Please specify planning group: ")
-        
         # Setup move_group handle
         self.move_group = moveit_commander.MoveGroupCommander(planning_group_name)
         self.move_group.set_planning_time(15.0) # This sets a time limit for the planning of trajectories
@@ -436,7 +432,7 @@ class Utils:
         sftp.close()
 
         # Start the remote script
-        print(shell.send(f'python3 {remote_script_path} --from_json True --interpolation_steps {interpolation_steps} --filename {filename}\n'))
+        print(shell.send(f'python3 {remote_script_path} --interpolation_steps {interpolation_steps} --filename {filename}\n'))
         wait_until_ready(2, 'ready_for_execution')
         self.gui.startBtn.setEnabled(True)
         self.gui.outputText.append("Ready to start movement")
@@ -454,5 +450,4 @@ class Utils:
         ssh.close()
 
 if __name__ == "__main__":
-    # main()
     pass
