@@ -119,10 +119,14 @@ class Joint:
             target_val = '%.3f' % target_val
             # target_val_deg = int(math.degrees(target_val))
             rospy.loginfo("Setting %s to [%s radians] -> [itp %s] ", self.name, target_val, intp_val)
-    def add_to_trajectory(self, target_val, interpolation_steps=10):
-        intp_val = interp(target_val, [self.angMin, self.angMax], [self.min_val, self.max_val])
-        if self.invert:
-            intp_val = 180 - intp_val
+    def add_to_trajectory(self, target_val, interpolation_steps=10, map=True):
+        if map:
+            intp_val = interp(target_val, [self.angMin, self.angMax], [self.min_val, self.max_val])
+            if self.invert:
+                intp_val = 180 - intp_val
+        else:
+            intp_val = target_val
+        # self.trajectory.append(float(intp_val))
         difference = intp_val - self.trajectory[-1]
         for i in range(1, interpolation_steps):
             self.trajectory.append(self.trajectory[-1] + difference/interpolation_steps)
@@ -228,6 +232,8 @@ if __name__ == '__main__':
                 joint_name = joint_names[joint_id]
                 translated_name = inverted_mapping[joint_name]
                 body.joints[translated_name].add_to_trajectory(position, int(args.interpolation_steps))
+        for joint in body.joints.values():
+            joint.add_to_trajectory(joint.default_val, int(args.interpolation_steps), map=False)
 
         #todo:
         max_len = 0
@@ -243,10 +249,14 @@ if __name__ == '__main__':
         if execute == 'start':
             print(f'starting trajectory with {len(body.joints["LH"].trajectory)} steps')
             for i in range(len(body.joints['LH'].trajectory)):
+                # print(i)
+                # time.sleep(0.3)
                 for name, joint in body.joints.items():
+                    # time_update = time.time()
                     joint.servo.angle = joint.trajectory[i]
-                    print(joint.trajectory)
-                    print(f'{joint.name} at {joint.servo.angle}')
+                    # time_update2 = time.time()
+                    # print(f'{joint.name} at {joint.servo.angle}, time to update: {time_update2 - time_update}')
+            print('finished_execution')
 
     else:
         rospy.init_node("monkey_listener")
