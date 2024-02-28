@@ -11,7 +11,7 @@ import threading
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QPushButton, QVBoxLayout,
                              QWidget, QTextEdit, QLineEdit, QLabel, QComboBox, QHBoxLayout)
 
-from monkey_interface import MoveGroupInterface, Utils
+from monkey_interface import Utils
 
 
 # Create self.helper class
@@ -76,6 +76,7 @@ class RobotGUI(QMainWindow):
                 widget = item.widget()
                 self.layout.removeWidget(widget)
                 widget.setParent(None)
+
     def setupCollectWaypointsUI(self):
         self.clear_layout()
         self.fileWidget.setVisible(True)
@@ -123,12 +124,11 @@ class RobotGUI(QMainWindow):
         self.interpLayout = QHBoxLayout(self.interpWidget)
         self.interpLayout.addWidget(self.interpLabel)
         self.interpLayout.addWidget(self.interpEdit)
-        # self.interpWidget.setVisible(False)
         self.executeBtn = QPushButton('Execute Plan', self)
-        self.executeBtn.setEnabled(False)  # Disable the button initially
+        self.executeBtn.setEnabled(False)
 
         self.startBtn = QPushButton('Start', self)
-        self.startBtn.setEnabled(False)  # Disable the button initially
+        self.startBtn.setEnabled(False)
         self.start = False
 
         self.loadWPBtn.clicked.connect(self.loadWP)
@@ -151,7 +151,6 @@ class RobotGUI(QMainWindow):
     def restoreMainUI(self):
         self.clear_layout()
         self.fileWidget.setVisible(False)
-        # self.layout.addWidget(self.infoLabel)
         self.layout.addWidget(self.optionLabel)
         self.layout.addWidget(self.optionCombo)
         self.layout.addWidget(self.fileWidget)
@@ -193,12 +192,9 @@ class RobotGUI(QMainWindow):
         if self.helper.plan:
             self.saveBtn.setEnabled(True)
             self.outputText.append("Planning successful.")
-            # self.executeBtn.setEnabled(True)
         else:
             self.saveBtn.setEnabled(False)
             self.outputText.append("Planning failed. Try again.")
-
-            # self.executeBtn.setEnabled(False)
 
     def savePlan(self):
         if self.fileNameEdit.text() == '':
@@ -217,7 +213,6 @@ class RobotGUI(QMainWindow):
         self.startBtn.setEnabled(False)
 
     def confirmAction(self):
-        # Get the selected action and file name
         action = self.optionCombo.currentText()
         fileName = self.fileNameEdit.text()
         if action == 'Collect waypoints':
@@ -226,7 +221,6 @@ class RobotGUI(QMainWindow):
 
             thread = threading.Thread(target=self.helper.collect_wpoints)
             thread.start()
-
 
         elif action == 'Load and edit waypoints':
             if self.helper.loadWaypointsFromJSON(fileName):
@@ -237,14 +231,10 @@ class RobotGUI(QMainWindow):
 
         elif action == 'Plan/Execute':
             self.setupPlanningUI()
-            # Load a saved plan and execute it
 
 
 if __name__ == '__main__':
-    # Create interface to Moveit:RobotCommander (move-group python interface)
-
     app = QApplication(sys.argv)
     gui = RobotGUI()
-
     gui.show()
     sys.exit(app.exec_())
