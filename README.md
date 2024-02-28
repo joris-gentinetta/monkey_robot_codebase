@@ -1,36 +1,31 @@
-# Instructions for setup and usage of control interface for robot monkey 
+# Instructions for setup of the control interface for the robot monkey 
 
 ## Introduction
 
-This ReadMe contains instructions for the setup and usage of a *control interface* for a robot monkey, which I have created during my bachelor's thesis:  "Assembly and Programming of a Robot Monkey to Study Imitation Learning in Marmosets" (see main branch).
-
-The appendix of the above mentioned thesis already contains most of the necessary instructions for the setup of the control interface. As is hinted at in section C.2.4 of the appendix of the thesis, it was not clear at the time of writing, whether the moveit config package created during the thesis would be usable on foreign machines. It turned out it is not. For this reason, this ReadMe contains a detailed instruction on how to generate the moveit config package used during the thesis. For completeness, all other setup steps are also described. 
+This ReadMe contains instructions for the setup and usage of the *control interface* for the robot monkey, which was started during Jaú Gretlers bachelor's thesis:  "Assembly and Programming of a Robot Monkey to Study Imitation Learning in Marmosets".
 
 
 ## Abbreviations and explanations of some terms 
 - Raspberry Pi (RPP)
 - Controller device: The device on which you want to run the simulation and interact with the robot
 
-## Index 
-1. Install Ubuntu 20.04 on the  controller device
-2. Install Ubuntu 20.04 Server on the RPP
-3. Setup a static IP on the RPP
-4. Install ROS on the controller device
-5. Install ROS on the RPP
-6. Setup the ROS Environment Variables
-7. Install MoveIt on the controller device
-8. Install package responsible for data saving/loading
-9. Generate a Moveit Config Package
-10. Modify the standard Rviz setup
-11. Modify the standard kinematics config
-12. Perform a quick test
-13. Download and build the monkey_interface
-14. Setup the monkey_interface
-15. Setup the RPP to listen to joint_states data
-16. Use the monkey_interface
-17. Use the joint_control node on the RPP
-18. Useful tricks
+# Usage
+## 1. Setup 
+On the RPP:
+- Start the ROS network by running ```roscore``` on the RPP.
+On the Controller:
+- Run ```roslaunch monkey demo.launch``` to start Rviz. 
+- In a second terminal run ```python3 /home/robot-user/monkey_robot_codebase/monkey_interface/src/robot_gui.py``` to start the GUI.
+- Arrange the windows such that you have Rviz on the left side of your screen and the GUI on the right side.
 
+## 2. GUI usage
+There are three options:
+- ```Collect waypoints```: Lets you choose waypoints for the left and right arm iteratively until you choose to save. Whenever you have moved the EEF of the robot to a desired waypoint you must manipulate the rotation of one of the interactive markers (red/green/blue circles). This ensures that the last interactive marker position recorded by the monkey_interface node corresponds to the position of the hand. 
+
+- ```Load and edit waypoints``` Lets you load a previously saved collection of waypoints. You can then add waypoints that will be appended.
+- ```Plan/Execute``` When using a collection of waypoints for the first time, you first ```Load Waypoints```, then ```Plan Carthesian Path```, then ```Save Plan```, then choose the number of interpolation steps between waypoints, then ```Execute Plan```. When the robot is ready to start the movement, the ```Start``` button is activated. In consequent usage, it will be ```Load Plan```, then choose the number of interpolation steps between waypoints, then ```Execute Plan```.
+
+# Installation and first setup
 ## 1. Install Ubuntu 20.04 on your controller device
 You can get the image from [here](https://releases.ubuntu.com/20.04/).
 
@@ -108,10 +103,8 @@ on the RPP. If you dont do that the setup assistant and all other nodes you try 
 If you just want to use Rviz and not control the physical robot, just use the PC_IP in the ROS_MASTER_URI. Then the network will be started by your PC.
 
 ## 7. Install MoveIt on the controller device
-Follow the instructions [here](https://ros-planning.github.io/moveit_tutorials/doc/getting_started/getting_started.html) to install MoveIt on the controller device. From this point onwards I am assuming you have a catkin workspace setup, to which I will refer as "ws_moveit" from now on. Note that this simply means that there is a folder in your /home directory called *ws_moveit*, in which you have executed all commands listed in the tutorial mentioned above. One command which you don't have to run is the last one of these three.
+Follow the instructions [here](https://ros-planning.github.io/moveit_tutorials/doc/getting_started/getting_started.html) to install MoveIt on the controller device. From this point onwards I am assuming you have a catkin workspace setup, to which I will refer as "ws_moveit" from now on. Note that this simply means that there is a folder in your /home directory called *ws_moveit*, in which you have executed all commands listed in the tutorial mentioned above. One command which you don't have to run is this one:
 ```
-cd ~/ws_moveit/src
-git clone https://github.com/ros-planning/moveit_tutorials.git -b master
 git clone https://github.com/ros-planning/panda_moveit_config.git -b noetic-devel #unnecessary
 ```
  If you run it "fatal error" will be displayed, but that is irrelevant for our purposes.
@@ -255,104 +248,4 @@ If you did everything right up until here, you should be able to drag around the
 3. If you haven't done so already, run ```caktin build ``` in the src folder, to build all packages. This will take about 10min (if you never build them before).
 4. Run ```chmod +x ~/ws_moveit/src/monkey_interface/src/monkey_interface.py``` to allow monkey_interface.py to be executed.
 
-
-## 14. Install MoveIt on the RPP
-Follow the instructions [here](https://ros-planning.github.io/moveit_tutorials/doc/getting_started/getting_started.html) to install MoveIt on the controller device. From this point onwards I am assuming you have a catkin workspace setup, to which I will refer as "ws_moveit" from now on. Note that this simply means that there is a folder in your /home directory called *ws_moveit*, in which you have executed all commands listed in the tutorial mentioned above. 
-
-
-## 15. Download and build the monkey_listener on the RPP
-1. From this repo, download the folder "monkey_listener" and place it in the "src" folder of your catkin ws
-2. Run ```catkin build monkey_listener``` to build the package.
-3. If you haven't done so already, run ```caktin build ``` in the src folder, to build all packages. This will take about 10min (if you never build them before).
-4. Open the directory *ws_moveit/src/monkey_listener* in a terminal and run ```chmod +x joint_control_listener.py``` and ```chmod +x joint_control.py``` to allow them to be executed.
-
  
-# Usage
-## 14. Setup the monkey_interface 
-1. Start the ROS network by running ```roscore``` on the RPP
-2. Then on the controller device:
-3. Open *ws_moveit* in two different terminals and source it in both: ```source devel/setup.bash```.
-4. In the first terminal run ```roslaunch <name-of-your-moveit-config> demo.launch``` e.g.: ```roslaunch monkey demo.launch```. Rviz should open. 
-5. In the second terminal run ```rosrun monkey_interface monkey_interface.py```
-6. Arrange all windwos such that you have Rviz on the left side of your screen and the second terminal on the right side (having multiple screens helps).
-
-## 15. Setup the RPP to listen to joint_states data
-It is important that you launch demo.launch and joint_control_listener.py in a certain order. Namely, you have to launch demo.launch (see 14.4) **before** you run joint_control_listener.py. The launch process of demo.launch includes the publishing of the joint_states as they are specified in the URDF. This corresponds to a pose of the robot where he stretches both arms horizontally and the head vertically. Even though the demo.launch launch process at some point loads the correct default poses (arms hanging, head looking forward), it seems impossible to get rid of this "jesus" like pose which he publishes at the very beginning of the launch process. 
-
-Another reason why it is important to use the order proposed above, is that the mentioned jesus pose is executed extremly fast on the robot, potentially altering the thread tension and/or turnbuckles configuration. 
-
-And also it is just annoying. 
-
-To run the joint_control_listener.py script do the following:
-
-1. Navigate to *ws_moveit* and source it
-2. Run ```rosrun monkey_listener joint_control_listener.py``` to start the listener node
-
-Note that the default position of the robot after the demo launch is determined by the planning group poses specified in the Setup Assistant. Namely, each planning group will be set to the first pose specified for it in the Setup Assistant. 
-
-The xml code in which the poses are saved can be found in the srdf file in the config folder of your moveit config package. It is sometimes easier to alter the poses and planning groups there instead of the setup assistant.
-
-
-## 16. Use the monkey_interface 
-Through the shell you can select one of the following actions, which I will call "modes":
-```
-[1]  Display the (hard coded) single pose goal
-[2]  Display the (hard coded) trajectory
-[3]  Collect waypoints for a cartesian path
-[4]  Load and edit waypoints from a specific json file 
-[5]  Exit
-```
-
-Now follows a detailed explanation of the modes:
-
-[1]: In the python script you can hard code a pose goal (pose: position + orientation) and running mode 1 will:
-- Display a (TODO) blue sphere in Rviz at the coordinate of the pose goal.
-- Plan a trajectory for the selectecd planning group. This will obviously only work for the arms, not for the head.
-- Execute the trajectory. This will make the arm of the robot in the simulation go to the pose goal. The real robot will only execute this movement too if the joint_control_listener.py script is running on the raspberry pi (RPP) and the ROS environment variables have been setup correctly.
-[2]: Same thing as 1 but for multiple poses
-[3]: Once you have selected mode 3, you are directly prompted to move the eef of your chosen planning group to the first waypoint in Rviz. Recall that the way we create movements for the arms of the robot, is that we specify a list of poses (called waypoints by me) and compute a path for a specific eef to go through those waypoints. So mode 3 will let you collect waypoints for as long as you like.
- 
-**Important**: Whenever you have moved the eef of the robot to a desired waypoint collection **you must manipulate the rotation of the interactive marker (blue sphere)**. This ensures that the last interactive marker position recorded by the monkey_interface node corresponds to the position of the hand. More details can be found in section 3.4 of my thesis. This means you must "rotate" the interactive marker by pulling at one of the three circles (red, green, blue). 
-
-![Screenshot from 2023-06-08 15-01-51](https://github.com/multiplexcuriosus/monkey_robot_codebase/assets/50492539/6f732623-7db9-4f73-82b8-45f0a5802f8f)
-
-If you don't manipulate the interactive marker, there is a high probabilty that the waypoint you save is outside the reachable space of the robot. This will then make it impossible to compute a trajectory. To prevent this from happening, a IK validty check is done for each newly added waypoint. It checks whether the newly set waypoint is in the reachable space of the robot by setting the new waypoint as a pose goal and trying to compute a trajectory to reach it. 
-
-Once your done collecting waypoints, simply write "no" when the program asks you if you want to add another waypoint. If desired, you can now save your waypoint collection into a json file whose name you must input (this will only work if the rospy-message-converter was installed). 
-
-Now you can plan a trajectory and if the planning was successfull, execute the trajectory. Again, note that it will only run on the physical robot if the listener script is running on the RPP. 
-
-In case you didn't save the waypoint collection before the trajectory execution but have changed your mind, you get a last prompt which offers to save the waypoints.
-
-[4]: In this mode, you can load an existing trajectory from memory. More specifically, the trajectory has to be a ROS PoseArray converted to a json file by the rospy-message-converter, and the file must be located in your catkin workspace. If you specified a name of a valid json file, it is loaded and the contained waypoints displayed in Rviz as spheres. Now you can either:
-- plan a trajectory through the loaded waypoints and then decide if you want to execute it
-- append new waypoints -> switch to mode 3
-- exit
-
-The following diagram describes the control flow of the monkey_interface.py script:
-
-![control_flow_all](https://github.com/multiplexcuriosus/monkey_robot_codebase/assets/50492539/c0ea0a91-2c30-446e-bc22-1dbd28313763)
-
-
-## 17. Use the joint_control node on the RPP
-To control the motors directly (as described in appendix D of the thesis) the following steps must be followed.
-
-1. SSH into the RPP (```ssh rm@<RPP_IP```) in two different terminals
-2. In the first terminal run ```roscore``` to start up the ROS network
-3. In the second terminal, navigate to *monkey_ws* and source it: ```source devel/setup.bash```.
-////4. In the second terminal, run ```sudo pigpiod``` to start the PiGPIO daemon.
-5. In the second terminal, run ```rosrun monkey_listener joint_control.py alldef``` to start the joint_control node and set all joints to their default value
-
-
-## 18. Useful tricks
--  If you want to deactivate a certain joint (e.g the LSH/RSH joints, see thesis) you can do that by going to the URDF file, searching the joint you want to deactivate and in his xml <limit > tage set the min and the max to the same value. Thus this joint will not be used by Rviz and Moveit.
-
-
-
-
-
-
-
-
-
-
