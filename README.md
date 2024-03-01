@@ -11,12 +11,21 @@ This ReadMe contains instructions for the setup and usage of the *control interf
 
 # Usage
 ## 1. Setup 
-On the RPP:
+### On the RPP:
+- Turn the power supply on FIRST and then connect it to the robot.
+- Connect the Ethernet cable and log in to the RPP: ```ssh rm@10.42.0.2``` PW: ```powderguide```
 - Start the ROS network by running ```roscore``` on the RPP.
-On the Controller:
+### On the Controller:
+- Update to the latest version:
+  ```
+  cd /home/robot-user/monkey_robot_codebase
+  git pull
+  ./update.bash  # moves the relevant updated files to the RPP
+  ```
 - Run ```roslaunch monkey demo.launch``` to start Rviz. 
 - In a second terminal run ```python3 /home/robot-user/monkey_robot_codebase/monkey_interface/src/robot_gui.py``` to start the GUI.
 - Arrange the windows such that you have Rviz on the left side of your screen and the GUI on the right side.
+
 
 ## 2. GUI usage
 There are three options:
@@ -25,6 +34,7 @@ There are three options:
 - ```Load and edit waypoints``` Lets you load a previously saved collection of waypoints. You can then add waypoints that will be appended.
 - ```Plan/Execute``` When using a collection of waypoints for the first time, you first ```Load Waypoints```, then ```Plan Carthesian Path```, then ```Save Plan```, then choose the number of interpolation steps between waypoints, then ```Execute Plan```. When the robot is ready to start the movement, the ```Start``` button is activated. In consequent usage, it will be ```Load Plan```, then choose the number of interpolation steps between waypoints, then ```Execute Plan```.
 There is a video of an example workflow on the Desktop of the controller.
+
 # Installation and first setup
 ## 1. Install Ubuntu 20.04 on your controller device
 You can get the image from [here](https://releases.ubuntu.com/20.04/).
